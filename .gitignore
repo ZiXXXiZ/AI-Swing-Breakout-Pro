@@ -1,0 +1,96 @@
+# MetaTrader 5 / MQL5
+*.ex5
+*.ex4
+*.mq5.bak
+*.mq4.bak
+*.mqh.bak
+
+# Compiled objects
+*.o
+*.obj
+*.lib
+
+# MetaTrader Logs and Temporary Files
+Logs/
+*.log
+*.txt~
+*.bak~
+
+# Backtest Results
+Reports/
+*.html
+*.csv~
+*.dat
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.sln.DotSettings
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Python and Data Science
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+.venv
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Strategy Tester
+Tester/
+
+# Optimization and Walk-Forward Results
+optimize_results/
+walkforward_results/
+backtest_cache/
+*.tmp
+
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# Local Configuration (User-specific settings)
+config.local.ini
+local_settings.ini
+*.local
+
+# Database and State Files
+*.db
+*.sqlite
+*.sqlite3
+*.lock
+
+# System Files
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+
+# Documentation Build Files
+docs/_build/
+build/
+dist/
+*.egg-info/
+
+# CI/CD
+.github/workflows/*.local.yml
