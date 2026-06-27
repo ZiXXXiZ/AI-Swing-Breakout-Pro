@@ -10,6 +10,36 @@ The changelog follows the principles of **Keep a Changelog** and **Semantic Vers
 
 ---
 
+# Version 2.0.0-alpha.2
+
+**Release Date:** *(To be assigned)*
+
+## Logging Framework Implementation
+
+### Added
+
+* LogLevel.mqh - Framework logging severity enumeration
+  * Defines four logging severity levels ordered by severity
+  * LOG_NONE (0) - Logging disabled
+  * LOG_ERROR (1) - Critical errors
+  * LOG_WARNING (2) - Warning conditions
+  * LOG_INFO (3) - General information
+  * LOG_DEBUG (4) - Debug information
+  * Zero dependencies, shared by all framework modules
+
+### Sprint Status: Logging Framework
+
+**Completed:**
+* ✅ LogLevel
+
+**In Progress:**
+* ⬜ LogRecord
+* ⬜ LogFormatter
+* ⬜ LogOutput
+* ⬜ Logger
+
+---
+
 # Version 2.0.0-alpha.1
 
 **Release Date:** *(To be assigned)*
@@ -126,7 +156,7 @@ release/*
 
 # Upcoming Release
 
-## Version 2.0.0-alpha.2
+## Version 2.0.0-alpha.3+
 
 Planned additions:
 
