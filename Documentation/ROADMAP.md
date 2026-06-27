@@ -4,7 +4,7 @@
 
 ## Development Roadmap
 
-Current Version: **v2.0.0-alpha.1**
+Current Version: **v2.0.0-alpha.2**
 
 ---
 
@@ -13,6 +13,155 @@ Current Version: **v2.0.0-alpha.1**
 **Phase:** Active Development
 
 **Goal:** Build a production-quality institutional trading framework for MetaTrader 5.
+
+---
+
+# Development Milestones
+
+## Milestone 1 — Core Foundation
+
+**Status:** In Progress
+
+We'll complete the Core Foundation first. This establishes a reusable foundation for every future module.
+
+### Core Modules
+
+**Completed:**
+
+* ✅ Version.mqh
+* ✅ InputParameters.mqh
+* ✅ Config.mqh
+* ✅ LogLevel.mqh
+
+**In Progress:**
+
+* 🔄 BaseObject
+* 🔄 LogRecord
+* 🔄 ILogFormatter
+* 🔄 ILogOutput
+* 🔄 LogFormatter
+* 🔄 JournalOutput
+* 🔄 Logger
+
+**Pending:**
+
+* ⏳ ErrorHandler
+* ⏳ Utilities
+* ⏳ SymbolManager
+* ⏳ IndicatorCache
+
+Once these are finished, we'll have a reusable foundation for every future module.
+
+---
+
+## Milestone 2 — Market Engine
+
+**Status:** Pending
+
+Then the framework starts becoming a trading system.
+
+### Trend Detection
+
+* Trend Detection
+* Swing Detection
+* Breakout Detection
+
+### Session Engine
+
+* Market Structure
+* Volatility Analysis
+
+---
+
+## Milestone 3 — Signal Engine
+
+**Status:** Pending
+
+### Signal Generation Pipeline
+
+1. Market Snapshot
+2. Rule Evaluation
+3. Probability Score
+4. Signal Generation
+
+---
+
+## Milestone 4 — Risk Engine
+
+**Status:** Pending
+
+### Risk Management Pipeline
+
+1. Risk %
+2. Position Size
+3. Exposure Check
+4. Trade Permission
+
+---
+
+## Milestone 5 — Trade Engine
+
+**Status:** Pending
+
+### Trade Execution Pipeline
+
+1. Signal
+2. Validation
+3. Execution
+4. Management
+5. Statistics
+
+---
+
+# Repository Structure
+
+Our End Goal: By the end of Version 2.0, the repository should look like something a professional development team could maintain.
+
+```
+AI_SwingBreakout_Pro/
+├── Experts/
+├── Include/
+├── Documentation/
+├── Tests/
+├── Reports/
+├── Presets/
+├── Scripts/
+├── Tools/
+├── README.md
+├── LICENSE
+└── CHANGELOG.md
+```
+
+---
+
+# Module Quality Standards
+
+Every module will have:
+
+* ✅ Professional documentation
+* ✅ Clear architecture
+* ✅ Unit tests (where practical)
+* ✅ Consistent coding standards
+* ✅ Clean compile
+* ✅ Production-ready quality
+
+---
+
+# Development Commitment
+
+We're going to hold ourselves to a very high standard throughout this project.
+
+Before writing code, we'll recommend improvements in:
+
+* Architecture
+* Performance
+* Memory usage
+* MQL5 best practices
+* Maintainability
+* Testability
+* Extensibility
+
+We'll be careful to avoid unnecessary complexity so we keep delivering working, production-quality modules.
 
 ---
 
@@ -43,140 +192,6 @@ Planned enhancements:
 * Multi-Strategy Engine
 * Cloud Configuration
 * AI Optimization
-
----
-
-# Development Milestones
-
-## Milestone 1 — Core Framework
-
-Status: **In Progress**
-
-### Completed
-
-* ✅ Version.mqh
-* ✅ InputParameters.mqh
-* ✅ Config.mqh
-
-### In Progress
-
-* 🔄 Logger.mqh
-
-### Pending
-
-* ⏳ ErrorHandler.mqh
-* ⏳ Utilities.mqh
-* ⏳ SymbolManager.mqh
-* ⏳ IndicatorCache.mqh
-* ⏳ MarketSnapshot.mqh
-* ⏳ Dashboard.mqh
-
----
-
-## Milestone 2 — Indicator Engine
-
-Status: Pending
-
-Modules:
-
-* EMA
-* ATR
-* ADX
-* Volume
-* Spread
-* Indicator Cache Integration
-
----
-
-## Milestone 3 — Market Engine
-
-Status: Pending
-
-Modules:
-
-* Trend Detector
-* Swing Detector
-* Breakout Detector
-* Market Structure
-* Session Filter
-* Volatility Filter
-* Market Regime Detection
-
----
-
-## Milestone 4 — Signal Engine
-
-Status: Pending
-
-Modules:
-
-* Entry Validation
-* Probability Calculation
-* Buy Signal
-* Sell Signal
-* Signal Confirmation
-
----
-
-## Milestone 5 — Risk Engine
-
-Status: Pending
-
-Modules:
-
-* Position Sizing
-* Maximum Daily Loss
-* Maximum Open Positions
-* Break-even
-* ATR Trailing Stop
-* Partial Close
-* Exposure Control
-
----
-
-## Milestone 6 — Trade Engine
-
-Status: Pending
-
-Modules:
-
-* Order Execution
-* Order Validation
-* Pending Orders
-* Position Management
-* Retry Logic
-* Error Recovery
-
----
-
-## Milestone 7 — Statistics & Dashboard
-
-Status: Pending
-
-Modules:
-
-* Dashboard
-* Trade Statistics
-* Daily Performance
-* Monthly Performance
-* CSV Export
-* Journal Export
-
----
-
-## Milestone 8 — Production Release
-
-Status: Pending
-
-Tasks:
-
-* Full Integration
-* Compile Verification
-* Strategy Testing
-* Parameter Optimization
-* Walk-Forward Testing
-* Demo Forward Test
-* Production Release
 
 ---
 
