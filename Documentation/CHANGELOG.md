@@ -1,225 +1,152 @@
-# CHANGELOG.md
+# Changelog
 
-# AI Swing Breakout Pro v2.0
+All notable changes to **AI Swing Breakout Pro** are documented in this file.
 
-## Project Changelog
-
-This document records all significant changes to the project.
-
-The changelog follows the principles of **Keep a Changelog** and **Semantic Versioning**.
+This project follows semantic versioning during development.
 
 ---
 
-# Version 2.0.0-alpha.2
+# [2.0.0-alpha.2] - 2026-06
 
-**Release Date:** *(To be assigned)*
+## Added
 
-## Logging Framework v1 Complete
+### Project Foundation
 
-A complete, working logging subsystem has been implemented. From this point on, every other subsystem can use a consistent logging API.
-
-### Added
-
-**Core/Logging/ Module Structure:**
-
-* ✅ LogLevel.mqh
-  * Framework logging severity enumeration
-  * Four severity levels: LOG_ERROR, LOG_WARNING, LOG_INFO, LOG_DEBUG
-
-* ✅ LogRecord.mqh
-  * Encapsulates individual log message data
-
-* ✅ Interfaces/ILogFormatter.mqh
-  * Abstract interface for log message formatting
-
-* ✅ Interfaces/ILogOutput.mqh
-  * Abstract interface for log output destinations
-
-* ✅ DefaultLogFormatter.mqh
-  * Standard implementation of ILogFormatter
-  * Formats log records with timestamp, level, and message
-
-* ✅ JournalLogOutput.mqh
-  * Implementation of ILogOutput
-  * Outputs log records to MT5 Journal
-
-* ✅ Logger.mqh
-  * Central logging API
-  * Manages formatters and outputs
-  * Supports multiple severity levels
-  * Runtime filtering capabilities
-
-### Milestone Achievement
-
-**Logging Framework Sprint Status:**
-* ✅ LogLevel
-* ✅ LogRecord
-* ✅ ILogFormatter
-* ✅ ILogOutput
-* ✅ DefaultLogFormatter
-* ✅ JournalLogOutput
-* ✅ Logger
-
-**Significance:** This is a major milestone. The framework now has a professional, consistent logging subsystem that all future modules will depend on.
-
----
-
-# Version 2.0.0-alpha.1
-
-**Release Date:** *(To be assigned)*
-
-## Project Initialization
-
-### Added
-
-* Initial project architecture
-* Institutional-grade framework design
-* Modular folder structure
+* Initial project folder structure
 * Documentation framework
-* Semantic versioning policy
-
-### Core Modules
-
-Implemented:
-
-* Version.mqh
-* InputParameters.mqh
-* Config.mqh
-
-Started:
-
-* Logger.mqh
-
-Planned:
-
-* ErrorHandler.mqh
-* Utilities.mqh
-* SymbolManager.mqh
-* IndicatorCache.mqh
-* Dashboard.mqh
+* Version management
+* BaseObject class
+* GitHub project initialization
 
 ---
 
-## Documentation
+### Logging Framework
 
-Created:
+Added complete logging infrastructure.
 
-* PROJECT_BIBLE.md
-* ARCHITECTURE.md
-* ROADMAP.md
-* CODING_STANDARD.md
-* CHANGELOG.md
+Modules:
 
-Planned:
+* LogLevel
+* LogRecord
+* ILogFormatter
+* ILogOutput
+* DefaultLogFormatter
+* JournalLogOutput
+* Logger
 
-* DEVELOPER_GUIDE.md
-* USER_GUIDE.md
-* TEST_PLAN.md
-* API_REFERENCE.md
+Features:
 
----
+* Multiple log levels
+* Formatter abstraction
+* Output abstraction
+* Journal logging
+* Structured log records
+* Dependency Injection support
 
-## Architecture Decisions
+Status:
 
-Adopted:
-
-* Modular architecture
-* Rule-based Version 2.0
-* Future AI integration in Version 3.0
-* Centralized configuration
-* Read-only runtime configuration
-* Centralized logging
-* Shared indicator cache
-* Separation of strategy logic from framework components
+Production Ready
 
 ---
 
-## Risk Model
+### Error Framework
 
-Default configuration:
+Added:
 
-* Risk Per Trade: **1.0%**
-* Maximum Daily Loss: **5.0%**
-* Maximum Open Positions: **3**
-* Probability Threshold: **0.70**
+* ErrorInfo
+* ErrorCodes
 
----
+Features:
 
-## Trading Features
+* Structured error information
+* Error category classification
+* Error severity classification
+* Recoverable flag
 
-Planned:
+Status:
 
-* Swing Breakout Strategy
-* EMA Trend Filter
-* ATR Volatility Filter
-* ADX Trend Strength Filter
-* Volume Confirmation
-* Session Filter
-* Break-even
-* ATR Trailing Stop
-* Partial Close
-* Position Sizing
-* Daily Loss Protection
+Partially Complete
 
 ---
 
-## Repository
+## Changed
 
-Repository initialized for GitHub development.
+### Architecture
 
-Recommended branch structure:
-
-```text
-main
-develop
-feature/*
-release/*
-```
+* Adopted SOLID principles throughout the project.
+* Standardized project folder structure.
+* Established dependency injection for reusable services.
+* Adopted project-wide `const` correctness.
+* Standardized naming conventions for classes, interfaces, structures, and enums.
 
 ---
 
-# Future Releases
+### Development Workflow
 
-## Beta
+Defined a permanent development workflow:
 
-* Core Framework complete
-* Market Engine complete
-* Signal Engine complete
-* Risk Engine complete
-* Trade Engine complete
-
----
-
-## Release Candidate
-
-* Bug fixes only
-* Performance optimization
-* Documentation freeze
+1. Design
+2. Production Code
+3. Compile Check
+4. Unit Test
+5. Documentation
+6. Git Commit
 
 ---
 
-## Version 2.0.0
+## In Progress
 
-Production release including:
+### Error Framework
 
-* Complete institutional trading framework
-* Comprehensive documentation
-* Optimization presets
-* Walk-forward testing results
-* Production-ready codebase
+Currently implementing:
+
+* ErrorHandler
+
+Planned features:
+
+* Binary search lookup
+* Centralized error definitions
+* Unknown error fallback
+* Logger integration
 
 ---
 
-# Change Log Policy
+## Planned
 
-Every completed module must result in a changelog update.
+### Core Infrastructure
 
-Each entry should include:
+* Utilities
+* Validation
+* Configuration
 
-* Added
-* Changed
-* Improved
-* Fixed
-* Removed (if applicable)
+### Core Services
 
-This document provides a complete history of the project's evolution from the initial architecture through production release.
+* SymbolManager
+* TimeManager
+* SessionManager
+* IndicatorCache
+* MarketDataCache
+
+### Trading Framework
+
+* Market Engine
+* Signal Engine
+* Risk Engine
+* Trade Engine
+
+### Application
+
+* Dashboard
+* Statistics
+* Backtesting Tools
+* Main Expert Advisor
+
+---
+
+# Development Notes
+
+This release establishes the architectural foundation for AI Swing Breakout Pro.
+
+Future releases will focus on implementing reusable infrastructure before developing trading functionality.
+
+The goal is to create a professional, maintainable, enterprise-quality MQL5 framework suitable for long-term development.
