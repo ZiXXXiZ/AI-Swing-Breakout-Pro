@@ -1,305 +1,380 @@
-# ROADMAP.md
+# AI Swing Breakout Pro
 
-# AI Swing Breakout Pro v2.0
+# ROADMAP
 
-## Development Roadmap
-
-Current Version: **v2.0.0-alpha.2**
+Version: 2.x Development Roadmap
 
 ---
 
-# Project Status
+# Vision
 
-**Phase:** Active Development
+Build an institutional-quality MQL5 trading framework that is:
 
-**Goal:** Build a production-quality institutional trading framework for MetaTrader 5.
-
----
-
-# Development Milestones
-
-## Milestone 1 — Core Foundation
-
-**Status:** In Progress
-
-We'll complete the Core Foundation first. This establishes a reusable foundation for every future module.
-
-### Core Modules
-
-**Completed:**
-
-* ✅ Version.mqh
-* ✅ InputParameters.mqh
-* ✅ Config.mqh
-* ✅ LogLevel.mqh
-
-**In Progress:**
-
-* 🔄 BaseObject
-* 🔄 LogRecord
-* 🔄 ILogFormatter
-* 🔄 ILogOutput
-* 🔄 LogFormatter
-* 🔄 JournalOutput
-* 🔄 Logger
-
-**Pending:**
-
-* ⏳ ErrorHandler
-* ⏳ Utilities
-* ⏳ SymbolManager
-* ⏳ IndicatorCache
-
-Once these are finished, we'll have a reusable foundation for every future module.
-
----
-
-## Milestone 2 — Market Engine
-
-**Status:** Pending
-
-Then the framework starts becoming a trading system.
-
-### Trend Detection
-
-* Trend Detection
-* Swing Detection
-* Breakout Detection
-
-### Session Engine
-
-* Market Structure
-* Volatility Analysis
-
----
-
-## Milestone 3 — Signal Engine
-
-**Status:** Pending
-
-### Signal Generation Pipeline
-
-1. Market Snapshot
-2. Rule Evaluation
-3. Probability Score
-4. Signal Generation
-
----
-
-## Milestone 4 — Risk Engine
-
-**Status:** Pending
-
-### Risk Management Pipeline
-
-1. Risk %
-2. Position Size
-3. Exposure Check
-4. Trade Permission
-
----
-
-## Milestone 5 — Trade Engine
-
-**Status:** Pending
-
-### Trade Execution Pipeline
-
-1. Signal
-2. Validation
-3. Execution
-4. Management
-5. Statistics
-
----
-
-# Repository Structure
-
-Our End Goal: By the end of Version 2.0, the repository should look like something a professional development team could maintain.
-
-```
-AI_SwingBreakout_Pro/
-├── Experts/
-├── Include/
-├── Documentation/
-├── Tests/
-├── Reports/
-├── Presets/
-├── Scripts/
-├── Tools/
-├── README.md
-├── LICENSE
-└── CHANGELOG.md
-```
-
----
-
-# Module Quality Standards
-
-Every module will have:
-
-* ✅ Professional documentation
-* ✅ Clear architecture
-* ✅ Unit tests (where practical)
-* ✅ Consistent coding standards
-* ✅ Clean compile
-* ✅ Production-ready quality
-
----
-
-# Development Commitment
-
-We're going to hold ourselves to a very high standard throughout this project.
-
-Before writing code, we'll recommend improvements in:
-
-* Architecture
-* Performance
-* Memory usage
-* MQL5 best practices
-* Maintainability
-* Testability
-* Extensibility
-
-We'll be careful to avoid unnecessary complexity so we keep delivering working, production-quality modules.
-
----
-
-# Version Roadmap
-
-## Version 2.0
-
-Focus:
-
-* Stable
 * Modular
-* Rule-Based
-* Fully Tested
+* Scalable
+* High Performance
+* Easy to Maintain
+* AI Ready
 * Production Ready
 
-Version 2.0 intentionally excludes AI decision making. The objective is to establish a robust and reliable trading framework.
+---
+
+# Guiding Principles
+
+Every module must be:
+
+* Independent
+* Testable
+* Documented
+* Reusable
+* Low Coupling
+* High Cohesion
+
+No feature is considered complete until:
+
+* Code Review
+* Compile Check
+* Unit Test
+* Documentation
+* Git Commit
 
 ---
 
-## Version 3.0 (Future)
-
-Planned enhancements:
-
-* ONNX AI Integration
-* Machine Learning Probability Engine
-* Adaptive Market Regime Detection
-* Portfolio Management
-* Multi-Strategy Engine
-* Cloud Configuration
-* AI Optimization
+# Development Phases
 
 ---
 
-# Testing Roadmap
+# Phase 1
 
-## Unit Testing
+## Foundation
 
-Each module must compile and function independently.
+Status
 
----
+Completed
 
-## Integration Testing
+Modules
 
-Verify communication between modules.
+* Project Structure
+* Documentation
+* Coding Standards
+* Version Management
+* BaseObject
 
----
+Goal
 
-## Strategy Testing
-
-Validate entry and exit logic.
-
----
-
-## Backtesting
-
-Run historical tests across multiple symbols and timeframes.
+Provide a stable software foundation.
 
 ---
 
-## Optimization
+# Phase 2
 
-Optimize key parameters:
+## Core Infrastructure
 
-* Risk %
-* EMA Periods
-* ATR Period
-* ADX Threshold
-* Probability Threshold
-* Break-even Settings
-* ATR Trailing Multiplier
+Status
 
----
+In Progress
 
-## Walk-Forward Testing
+Modules
 
-Split historical data into:
+### Logging
 
-* Training Period
-* Validation Period
-* Forward Period
+* LogLevel
+* LogRecord
+* Logger
+* Formatter
+* Outputs
 
-Repeat across multiple market conditions.
+Status
+
+Completed
 
 ---
 
-## Demo Forward Testing
+### Error Framework
 
-Minimum recommended duration:
+* ErrorInfo
+* ErrorCodes
+* ErrorHandler
 
-* 30–90 trading days
+Status
 
-Monitor:
-
-* Stability
-* Drawdown
-* Win Rate
-* Profit Factor
-* Execution Reliability
+In Progress
 
 ---
 
-# Release Plan
+### Utilities
 
-## Alpha
-
-Core framework completed.
-
----
-
-## Beta
-
-All modules implemented.
+* String Utilities
+* Time Utilities
+* Math Utilities
+* File Utilities
 
 ---
 
-## Release Candidate (RC)
+### Validation
 
-Only bug fixes permitted.
-
----
-
-## Production
-
-Official Version 2.0 release.
+* Runtime Validation
+* Parameter Validation
 
 ---
 
-# Long-Term Vision
+### Configuration
 
-Build a reusable institutional trading framework where new strategies can be added without modifying the Core, Risk, Trade, or Statistics modules.
+* Config
+* Settings
+* Environment
 
-Future strategy modules may include:
+Goal
 
-* Swing Breakout
-* Trend Following
-* Pullback
-* Mean Reversion
-* Scalping
-* AI Strategy
+Provide reusable services for every subsystem.
 
-The framework will serve as the foundation for all future trading systems.
+---
+
+# Phase 3
+
+## Core Services
+
+Modules
+
+* SymbolManager
+* TimeManager
+* SessionManager
+* IndicatorCache
+* MarketDataCache
+
+Goal
+
+Centralize market data and improve performance.
+
+---
+
+# Phase 4
+
+## Market Analysis
+
+Modules
+
+* Trend Engine
+* Swing Detection
+* Volatility Analysis
+* Support & Resistance
+* Breakout Detection
+* Market State
+
+Goal
+
+Build reliable market intelligence.
+
+---
+
+# Phase 5
+
+## Signal Engine
+
+Modules
+
+* Entry Signals
+* Exit Signals
+* Confirmation Filters
+* Signal Validation
+* Multi-Timeframe Analysis
+
+Goal
+
+Generate high-quality trading signals.
+
+---
+
+# Phase 6
+
+## Risk Management
+
+Modules
+
+* Position Sizing
+* Daily Loss Protection
+* Maximum Drawdown
+* Exposure Control
+* Trade Limits
+* Risk Filters
+
+Goal
+
+Protect trading capital.
+
+---
+
+# Phase 7
+
+## Trade Execution
+
+Modules
+
+* TradeEngine
+* PositionManager
+* OrderManager
+* StopManager
+* Trailing Stop
+* Break Even
+* Partial Close
+
+Goal
+
+Reliable and efficient trade execution.
+
+---
+
+# Phase 8
+
+## Dashboard & Monitoring
+
+Modules
+
+* Dashboard
+* Statistics
+* Performance Monitor
+* Error Monitor
+* Log Viewer
+
+Goal
+
+Provide complete operational visibility.
+
+---
+
+# Phase 9
+
+## Backtesting & Optimization
+
+Modules
+
+* Backtest Report
+* Optimization Report
+* Performance Metrics
+* Strategy Validation
+
+Goal
+
+Evaluate strategy quality.
+
+---
+
+# Phase 10
+
+## AI Integration
+
+Future Version
+
+Modules
+
+* AI Signal Filter
+* AI Market Classification
+* AI Risk Adjustment
+* AI Parameter Optimization
+
+Goal
+
+Prepare the framework for future AI-powered enhancements.
+
+---
+
+# Version Milestones
+
+## v2.0.0-alpha
+
+Foundation
+
+Core Infrastructure
+
+---
+
+## v2.0.0-beta
+
+Core Services
+
+Market Engine
+
+Signal Engine
+
+---
+
+## v2.0.0-rc
+
+Risk Engine
+
+Trade Engine
+
+Dashboard
+
+---
+
+## v2.0.0
+
+Production Release
+
+* Fully Tested
+* Fully Documented
+* GitHub Release
+* Stable API
+
+---
+
+# Future Versions
+
+## Version 2.1
+
+Performance Improvements
+
+Additional Indicators
+
+Strategy Extensions
+
+---
+
+## Version 2.5
+
+Multi-Strategy Support
+
+Plugin Architecture
+
+---
+
+## Version 3.0
+
+AI Integration
+
+Cloud Logging
+
+Advanced Analytics
+
+Machine Learning Support
+
+---
+
+# Success Criteria
+
+Version 2.0 is complete when:
+
+✓ Core Infrastructure Complete
+
+✓ Trading Engine Complete
+
+✓ Dashboard Complete
+
+✓ Unit Tests Passing
+
+✓ Documentation Complete
+
+✓ Production Ready
+
+✓ GitHub Release
+
+---
+
+# Motto
+
+Build once.
+
+Build correctly.
+
+Maintain forever.
