@@ -67,6 +67,14 @@ Status:
 
 Partially Complete
 
+## [Testing]
+
+### Added
+- Initial TestFramework.mqh
+- Assertion helpers
+- Test statistics
+- Summary reporting
+
 ---
 
 ## Changed
