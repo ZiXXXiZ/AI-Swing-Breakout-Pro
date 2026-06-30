@@ -140,6 +140,14 @@ Design Decisions
 
 ---
 
+## Testing
+
+In Progress
+
+* ☑ TestFramework
+
+---
+
 # Development Roadmap
 
 ## Phase 1 — Core Infrastructure
