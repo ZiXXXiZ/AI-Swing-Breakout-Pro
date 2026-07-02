@@ -1,225 +1,158 @@
-# CHANGELOG.md
+# Changelog
 
-# AI Swing Breakout Pro v2.0
+All notable changes to **AI Swing Breakout Pro Framework** are documented in this file.
 
-## Project Changelog
-
-This document records all significant changes to the project.
-
-The changelog follows the principles of **Keep a Changelog** and **Semantic Versioning**.
+The project follows a modified form of **Keep a Changelog** and **Semantic Versioning** during development.
 
 ---
 
-# Version 2.0.0-alpha.2
+# [2.0.0-alpha.2] - 2026-07-03
 
-**Release Date:** *(To be assigned)*
+## Added
 
-## Logging Framework v1 Complete
+### Framework Foundation
 
-A complete, working logging subsystem has been implemented. From this point on, every other subsystem can use a consistent logging API.
+* Logger module
+* Error handling module
+* TestFramework for unit testing
+* StringUtils utility module
+* TimeUtils utility module
 
-### Added
+### String Utilities
 
-**Core/Logging/ Module Structure:**
+* String trimming helpers
+* String case conversion
+* String splitting
+* String replacement
+* String formatting helpers
+* Numeric conversion helpers
+* Validation helpers
 
-* ✅ LogLevel.mqh
-  * Framework logging severity enumeration
-  * Four severity levels: LOG_ERROR, LOG_WARNING, LOG_INFO, LOG_DEBUG
+### Time Utilities
 
-* ✅ LogRecord.mqh
-  * Encapsulates individual log message data
+* Date component helpers
+* Time component helpers
+* Day-of-week helpers
+* Trading day detection
+* Weekend detection
+* Start-of-day calculations
+* End-of-day calculations
+* Date formatting
+* Time formatting
+* DateTime formatting
 
-* ✅ Interfaces/ILogFormatter.mqh
-  * Abstract interface for log message formatting
+### Testing
 
-* ✅ Interfaces/ILogOutput.mqh
-  * Abstract interface for log output destinations
-
-* ✅ DefaultLogFormatter.mqh
-  * Standard implementation of ILogFormatter
-  * Formats log records with timestamp, level, and message
-
-* ✅ JournalLogOutput.mqh
-  * Implementation of ILogOutput
-  * Outputs log records to MT5 Journal
-
-* ✅ Logger.mqh
-  * Central logging API
-  * Manages formatters and outputs
-  * Supports multiple severity levels
-  * Runtime filtering capabilities
-
-### Milestone Achievement
-
-**Logging Framework Sprint Status:**
-* ✅ LogLevel
-* ✅ LogRecord
-* ✅ ILogFormatter
-* ✅ ILogOutput
-* ✅ DefaultLogFormatter
-* ✅ JournalLogOutput
-* ✅ Logger
-
-**Significance:** This is a major milestone. The framework now has a professional, consistent logging subsystem that all future modules will depend on.
+* TestStringUtils
+* Framework unit testing infrastructure
 
 ---
 
-# Version 2.0.0-alpha.1
+## Changed
 
-**Release Date:** *(To be assigned)*
-
-## Project Initialization
-
-### Added
-
-* Initial project architecture
-* Institutional-grade framework design
-* Modular folder structure
-* Documentation framework
-* Semantic versioning policy
-
-### Core Modules
-
-Implemented:
-
-* Version.mqh
-* InputParameters.mqh
-* Config.mqh
-
-Started:
-
-* Logger.mqh
-
-Planned:
-
-* ErrorHandler.mqh
-* Utilities.mqh
-* SymbolManager.mqh
-* IndicatorCache.mqh
-* Dashboard.mqh
+* Established unified project coding standard.
+* Standardized header format across framework modules.
+* Standardized static utility class pattern.
+* Unified documentation style.
+* Standardized include guard naming.
+* Improved module organization under `Core` and `Tests`.
+* Adopted compile-first development workflow.
+* Adopted module-first architecture.
 
 ---
 
 ## Documentation
 
-Created:
+Added and updated:
 
-* PROJECT_BIBLE.md
-* ARCHITECTURE.md
-* ROADMAP.md
-* CODING_STANDARD.md
-* CHANGELOG.md
+* README
+* PROJECT_STATUS
+* ROADMAP
+* CHANGELOG
 
-Planned:
+Documentation now tracks:
 
-* DEVELOPER_GUIDE.md
-* USER_GUIDE.md
-* TEST_PLAN.md
-* API_REFERENCE.md
-
----
-
-## Architecture Decisions
-
-Adopted:
-
-* Modular architecture
-* Rule-based Version 2.0
-* Future AI integration in Version 3.0
-* Centralized configuration
-* Read-only runtime configuration
-* Centralized logging
-* Shared indicator cache
-* Separation of strategy logic from framework components
+* Current project progress
+* Build workflow
+* Module roadmap
+* Development milestones
 
 ---
 
-## Risk Model
+## Project Status
 
-Default configuration:
+### Completed
 
-* Risk Per Trade: **1.0%**
-* Maximum Daily Loss: **5.0%**
-* Maximum Open Positions: **3**
-* Probability Threshold: **0.70**
+Foundation
 
----
+* Logger
+* Error
+* StringUtils
+* TimeUtils
+* TestFramework
+* TestStringUtils
 
-## Trading Features
+### In Progress
 
-Planned:
+* TestTimeUtils
 
-* Swing Breakout Strategy
-* EMA Trend Filter
-* ATR Volatility Filter
-* ADX Trend Strength Filter
-* Volume Confirmation
-* Session Filter
-* Break-even
-* ATR Trailing Stop
-* Partial Close
-* Position Sizing
-* Daily Loss Protection
+### Planned
 
----
+Utilities
 
-## Repository
+* MathUtils
+* ArrayUtils
 
-Repository initialized for GitHub development.
+Infrastructure
 
-Recommended branch structure:
+* Configuration
+* SymbolManager
+* SessionManager
+* IndicatorCache
 
-```text
-main
-develop
-feature/*
-release/*
-```
+Trading
 
----
+* OrderManager
+* PositionManager
+* RiskManager
 
-# Future Releases
+Strategy Framework
 
-## Beta
-
-* Core Framework complete
-* Market Engine complete
-* Signal Engine complete
-* Risk Engine complete
-* Trade Engine complete
+* Strategy Base
+* Signal Engine
+* AI Swing Breakout Strategy
 
 ---
 
-## Release Candidate
+## Development Workflow
 
-* Bug fixes only
-* Performance optimization
-* Documentation freeze
+Every module follows the same lifecycle:
+
+1. Design
+2. Implementation
+3. Compile
+4. Fix compiler issues
+5. Unit testing
+6. Documentation
+7. Acceptance
+
+Modules are accepted only after:
+
+* 0 compiler errors
+* 0 compiler warnings
+* Successful unit tests
 
 ---
 
-## Version 2.0.0
+# [2.0.0-alpha.1]
 
-Production release including:
+## Initial Framework
 
-* Complete institutional trading framework
-* Comprehensive documentation
-* Optimization presets
-* Walk-forward testing results
-* Production-ready codebase
+### Added
 
----
-
-# Change Log Policy
-
-Every completed module must result in a changelog update.
-
-Each entry should include:
-
-* Added
-* Changed
-* Improved
-* Fixed
-* Removed (if applicable)
-
-This document provides a complete history of the project's evolution from the initial architecture through production release.
+* Initial repository structure
+* Core architecture
+* Utilities layer
+* Testing framework concept
+* Documentation framework
+* Initial coding standards
