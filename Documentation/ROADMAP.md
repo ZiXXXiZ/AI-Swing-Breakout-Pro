@@ -1,305 +1,243 @@
-# ROADMAP.md
+# AI Swing Breakout Pro Framework Roadmap
 
-# AI Swing Breakout Pro v2.0
-
-## Development Roadmap
-
-Current Version: **v2.0.0-alpha.2**
+**Project:** AI Swing Breakout Pro
+**Version:** 2.0.0-alpha.2
+**Status:** Active Development
 
 ---
 
-# Project Status
+# Vision
 
-**Phase:** Active Development
+Build a production-quality MQL5 framework that is reusable across multiple Expert Advisors, indicators, scripts, and future AI-based trading systems.
 
-**Goal:** Build a production-quality institutional trading framework for MetaTrader 5.
+The framework emphasizes:
 
----
-
-# Development Milestones
-
-## Milestone 1 — Core Foundation
-
-**Status:** In Progress
-
-We'll complete the Core Foundation first. This establishes a reusable foundation for every future module.
-
-### Core Modules
-
-**Completed:**
-
-* ✅ Version.mqh
-* ✅ InputParameters.mqh
-* ✅ Config.mqh
-* ✅ LogLevel.mqh
-
-**In Progress:**
-
-* 🔄 BaseObject
-* 🔄 LogRecord
-* 🔄 ILogFormatter
-* 🔄 ILogOutput
-* 🔄 LogFormatter
-* 🔄 JournalOutput
-* 🔄 Logger
-
-**Pending:**
-
-* ⏳ ErrorHandler
-* ⏳ Utilities
-* ⏳ SymbolManager
-* ⏳ IndicatorCache
-
-Once these are finished, we'll have a reusable foundation for every future module.
+* Clean architecture
+* Modular design
+* Reusable components
+* High test coverage
+* Production-ready quality
+* Long-term maintainability
 
 ---
 
-## Milestone 2 — Market Engine
+# Current Progress
 
-**Status:** Pending
+## Phase 1 — Foundation ✅
 
-Then the framework starts becoming a trading system.
+Completed
 
-### Trend Detection
+* Logger
+* Error
+* StringUtils
+* TimeUtils
+* TestFramework
+* TestStringUtils
 
-* Trend Detection
+---
+
+## Phase 2 — Core Utilities 🚧
+
+### Completed
+
+* StringUtils
+* TimeUtils
+
+### In Progress
+
+* TestTimeUtils
+
+### Remaining
+
+* MathUtils
+* TestMathUtils
+* ArrayUtils
+* TestArrayUtils
+
+**Goal**
+
+Provide a complete set of reusable utility modules with comprehensive unit tests.
+
+---
+
+# Phase 3 — Core Infrastructure
+
+## Configuration
+
+* Configuration Manager
+* Environment Settings
+* Constants
+* Global Parameters
+
+## Symbol Services
+
+* SymbolManager
+* Market Information Cache
+* Tick Size Helpers
+* Contract Specifications
+
+## Trading Sessions
+
+* SessionManager
+* Trading Hours
+* Holiday Detection
+* Market State
+
+## Indicator Cache
+
+* Indicator Handle Manager
+* Cache Management
+* Resource Cleanup
+
+---
+
+# Phase 4 — Trading Engine
+
+## Order Layer
+
+* OrderManager
+* Pending Order Manager
+* Request Builder
+
+## Position Layer
+
+* PositionManager
+* Position Utilities
+* Position Statistics
+
+## Risk Layer
+
+* RiskManager
+* Position Sizing
+* Daily Loss Limits
+* Exposure Control
+* Drawdown Protection
+
+---
+
+# Phase 5 — Strategy Framework
+
+## Base Framework
+
+* Strategy Base Class
+* Signal Interface
+* Filter Interface
+* Execution Pipeline
+
+## Components
+
+* Signal Engine
+* Entry Filters
+* Exit Filters
+* Trade Lifecycle
+
+---
+
+# Phase 6 — AI Swing Breakout Strategy
+
+Implementation of the production strategy.
+
+Features include:
+
 * Swing Detection
 * Breakout Detection
-
-### Session Engine
-
-* Market Structure
-* Volatility Analysis
-
----
-
-## Milestone 3 — Signal Engine
-
-**Status:** Pending
-
-### Signal Generation Pipeline
-
-1. Market Snapshot
-2. Rule Evaluation
-3. Probability Score
-4. Signal Generation
+* Volume Confirmation
+* ATR Filters
+* Trend Filters
+* Risk-Based Position Sizing
+* Session Filters
+* News Filters (optional)
 
 ---
 
-## Milestone 4 — Risk Engine
+# Phase 7 — Advanced Features
 
-**Status:** Pending
+## Performance
 
-### Risk Management Pipeline
+* Object Pooling
+* Memory Optimization
+* Cache Improvements
 
-1. Risk %
-2. Position Size
-3. Exposure Check
-4. Trade Permission
+## Diagnostics
 
----
+* Advanced Logging
+* Performance Metrics
+* Profiling Support
 
-## Milestone 5 — Trade Engine
+## Reporting
 
-**Status:** Pending
-
-### Trade Execution Pipeline
-
-1. Signal
-2. Validation
-3. Execution
-4. Management
-5. Statistics
+* Trade Statistics
+* Equity Analytics
+* Strategy Reports
 
 ---
 
-# Repository Structure
+# Phase 8 — Documentation
 
-Our End Goal: By the end of Version 2.0, the repository should look like something a professional development team could maintain.
+Complete project documentation.
 
-```
-AI_SwingBreakout_Pro/
-├── Experts/
-├── Include/
-├── Documentation/
-├── Tests/
-├── Reports/
-├── Presets/
-├── Scripts/
-├── Tools/
-├── README.md
-├── LICENSE
-└── CHANGELOG.md
-```
+* API Reference
+* Developer Guide
+* Coding Standards
+* Architecture Guide
+* Unit Testing Guide
+* Example Projects
 
 ---
 
-# Module Quality Standards
+# Development Workflow
 
-Every module will have:
+Every module follows the same process:
 
-* ✅ Professional documentation
-* ✅ Clear architecture
-* ✅ Unit tests (where practical)
-* ✅ Consistent coding standards
-* ✅ Clean compile
-* ✅ Production-ready quality
+1. Design
+2. Implementation
+3. Compile
+4. Fix Compiler Issues
+5. Unit Testing
+6. Code Review
+7. Documentation
+8. Acceptance
 
----
+No module is considered complete until it passes compilation with:
 
-# Development Commitment
-
-We're going to hold ourselves to a very high standard throughout this project.
-
-Before writing code, we'll recommend improvements in:
-
-* Architecture
-* Performance
-* Memory usage
-* MQL5 best practices
-* Maintainability
-* Testability
-* Extensibility
-
-We'll be careful to avoid unnecessary complexity so we keep delivering working, production-quality modules.
+* **0 compiler errors**
+* **0 compiler warnings**
+* All unit tests passing
 
 ---
 
-# Version Roadmap
+# Current Priorities
 
-## Version 2.0
+Priority 1
 
-Focus:
+* TestTimeUtils
 
-* Stable
-* Modular
-* Rule-Based
-* Fully Tested
-* Production Ready
+Priority 2
 
-Version 2.0 intentionally excludes AI decision making. The objective is to establish a robust and reliable trading framework.
+* MathUtils
+* TestMathUtils
 
----
+Priority 3
 
-## Version 3.0 (Future)
+* ArrayUtils
+* TestArrayUtils
 
-Planned enhancements:
+Priority 4
 
-* ONNX AI Integration
-* Machine Learning Probability Engine
-* Adaptive Market Regime Detection
-* Portfolio Management
-* Multi-Strategy Engine
-* Cloud Configuration
-* AI Optimization
+* Configuration
+* SymbolManager
+* SessionManager
 
 ---
 
-# Testing Roadmap
+# Long-Term Goal
 
-## Unit Testing
+Deliver a robust, maintainable, and extensible MQL5 framework that serves as the foundation for:
 
-Each module must compile and function independently.
+* AI Swing Breakout Pro
+* Additional Expert Advisors
+* Custom Indicators
+* Scripts
+* Future machine learning and AI-assisted trading modules
 
----
-
-## Integration Testing
-
-Verify communication between modules.
-
----
-
-## Strategy Testing
-
-Validate entry and exit logic.
-
----
-
-## Backtesting
-
-Run historical tests across multiple symbols and timeframes.
-
----
-
-## Optimization
-
-Optimize key parameters:
-
-* Risk %
-* EMA Periods
-* ATR Period
-* ADX Threshold
-* Probability Threshold
-* Break-even Settings
-* ATR Trailing Multiplier
-
----
-
-## Walk-Forward Testing
-
-Split historical data into:
-
-* Training Period
-* Validation Period
-* Forward Period
-
-Repeat across multiple market conditions.
-
----
-
-## Demo Forward Testing
-
-Minimum recommended duration:
-
-* 30–90 trading days
-
-Monitor:
-
-* Stability
-* Drawdown
-* Win Rate
-* Profit Factor
-* Execution Reliability
-
----
-
-# Release Plan
-
-## Alpha
-
-Core framework completed.
-
----
-
-## Beta
-
-All modules implemented.
-
----
-
-## Release Candidate (RC)
-
-Only bug fixes permitted.
-
----
-
-## Production
-
-Official Version 2.0 release.
-
----
-
-# Long-Term Vision
-
-Build a reusable institutional trading framework where new strategies can be added without modifying the Core, Risk, Trade, or Statistics modules.
-
-Future strategy modules may include:
-
-* Swing Breakout
-* Trend Following
-* Pullback
-* Mean Reversion
-* Scalping
-* AI Strategy
-
-The framework will serve as the foundation for all future trading systems.
+The framework should be suitable for long-term production use and easy for other developers to understand, extend, and maintain.
