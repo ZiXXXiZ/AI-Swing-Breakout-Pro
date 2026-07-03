@@ -1,147 +1,246 @@
-# CONTRIBUTING
+# CONTRIBUTING.md
 
-## 1. Project Philosophy
+**Project:** AI Swing Breakout Pro Framework
 
-* Build production-quality software from the beginning.
-* Prefer simplicity over cleverness.
-* Design for maintainability, extensibility, and testability.
-* Finish one module completely before starting the next.
+Thank you for contributing to AI Swing Breakout Pro.
 
----
-
-## 2. Directory Structure
-
-* Organize the project by **packages**, not individual files.
-* Each package should contain:
-
-  * Source files
-  * Tests
-  * `README.md`
-* Shared documentation belongs in the `Docs/` directory.
+This document describes the workflow, standards, and expectations for contributing to the project.
 
 ---
 
-## 3. Coding Standards
+# Development Philosophy
 
-* Write compile-ready MQL5 code.
-* No placeholder or pseudocode in production files.
-* Keep functions focused on a single responsibility.
-* Use consistent formatting and naming throughout the project.
-* Avoid duplicated logic.
+The framework is designed to be:
 
----
+* Modular
+* Maintainable
+* Testable
+* Reusable
+* Well documented
 
-## 4. Naming Conventions
-
-| Item            | Convention     |
-| --------------- | -------------- |
-| Class           | `C` prefix     |
-| Interface       | `I` prefix     |
-| Struct          | `S` prefix     |
-| Enum            | `ENUM_` prefix |
-| Global Object   | `g_` prefix    |
-| Member Variable | `m_` prefix    |
-| Constant        | `UPPER_CASE`   |
+Every contribution should improve one or more of these qualities.
 
 ---
 
-## 5. Package Architecture
+# Engineering Principles
 
-A package is the unit of development.
+Contributors should follow these principles:
 
-Each package contains:
-
-* Source code
-* Tests
-* Documentation
-
-A package is considered complete only after all three are finished.
+* Keep changes focused.
+* Prefer readability over cleverness.
+* Maintain backward compatibility whenever practical.
+* Avoid unnecessary complexity.
+* Update documentation alongside code.
 
 ---
 
-## 6. Dependency Rules
-
-Dependencies flow only in one direction:
+# Repository Structure
 
 ```text
-Strategy
-    ↓
-Trading
-    ↓
-Core Services
-    ↓
-Utilities
+Core/
+Tests/
+Documentation/
+Examples/
 ```
 
-Lower-level packages must never depend on higher-level packages.
+Each directory has a single responsibility.
 
 ---
 
-## 7. Development Workflow
+# Branch Strategy
 
-Every module follows this workflow:
+The recommended branch model is:
 
-1. Design
-2. Complete production source
-3. Compile
-4. Fix compiler issues
-5. Unit tests
-6. Documentation update
-7. Code review
-8. Git commit
+```text
+main
+│
+├── feature/<feature-name>
+├── fix/<issue-name>
+├── refactor/<module-name>
+└── release/<version>
+```
 
----
+Examples:
 
-## 8. Testing Standards
+```text
+feature/math-utils
+feature/risk-manager
+fix/time-utils-overflow
+refactor/logger
+release/v2.0.0-beta
+```
 
-* Test public behavior, not implementation details.
-* Every public method must have unit tests.
-* Each assertion produces one log line.
-* Every test file prints a final summary.
-* Use consistent assertion helpers across the project.
-
----
-
-## 9. Documentation Standards
-
-Every package must provide:
-
-* `README.md`
-* Public API overview
-* Dependencies
-* Example usage
-* Revision history (when appropriate)
+Do not commit unfinished work directly to `main`.
 
 ---
 
-## 10. Definition of Done
+# Commit Message Convention
 
-A module is complete only when:
+Use concise, descriptive commit messages.
 
-* Source code is complete.
-* Compiles with zero errors.
-* Compiles with zero warnings.
+Recommended format:
+
+```text
+<type>: <description>
+```
+
+Examples:
+
+```text
+feat: add MathUtils module
+feat: implement RiskManager
+fix: correct TimeUtils timezone handling
+refactor: simplify Logger implementation
+docs: update architecture documentation
+test: add unit tests for ArrayUtils
+style: apply coding standards
+chore: reorganize documentation
+```
+
+---
+
+# Pull Request Checklist
+
+Before opening a pull request, ensure:
+
+* Code compiles successfully.
+* Zero compiler errors.
+* Zero compiler warnings.
 * Unit tests pass.
 * Documentation is updated.
-* Ready for Git commit.
+* Coding standards are followed.
+* Public APIs are documented.
+* Changelog is updated when applicable.
 
 ---
 
-## 11. Git Commit Guidelines
+# Code Review Guidelines
 
-* Keep commits focused on a single logical change.
-* Ensure the project compiles before committing.
-* Update documentation when public APIs change.
-* Write clear, descriptive commit messages.
+Reviewers should verify:
+
+* Architecture consistency.
+* API consistency.
+* Readability.
+* Test coverage.
+* Performance impact.
+* Documentation quality.
+* Backward compatibility.
+
+Reviews should focus on improving the code, not criticizing the contributor.
 
 ---
 
-## 12. Versioning Policy
+# Documentation Requirements
 
-* Follow semantic versioning.
-* Increment:
+Documentation must be updated whenever changes affect:
 
-  * Patch for fixes
-  * Minor for new backward-compatible features
-  * Major for breaking changes
-* Tag stable milestones in Git.
+* Public APIs
+* Architecture
+* Development workflow
+* Project roadmap
+* Release notes
+
+At a minimum, review:
+
+* CHANGELOG.md
+* PROJECT_STATUS.md
+* ROADMAP.md
+* ARCHITECTURE.md
+
+---
+
+# Testing Requirements
+
+Every new public feature should include:
+
+* Unit tests
+* Boundary tests
+* Invalid input tests
+* Regression tests (where applicable)
+
+Code without appropriate tests should not be considered complete.
+
+---
+
+# Definition of Done
+
+A contribution is considered complete when:
+
+* It compiles successfully.
+* Compiler reports zero warnings.
+* All relevant unit tests pass.
+* Documentation is updated.
+* Coding standards are satisfied.
+* Architecture remains consistent.
+* The change has been reviewed.
+
+---
+
+# Issue Reporting
+
+When reporting an issue, include:
+
+* Framework version
+* MetaTrader 5 build
+* Operating system
+* Steps to reproduce
+* Expected behavior
+* Actual behavior
+* Relevant logs or screenshots
+
+Clear reports help resolve issues more quickly.
+
+---
+
+# Security
+
+Do not commit:
+
+* Account credentials
+* API keys
+* Personal data
+* Broker-specific secrets
+* Proprietary configuration files
+
+Report security concerns privately to the project owner.
+
+---
+
+# Release Process
+
+Each release should follow this sequence:
+
+1. Complete implementation.
+2. Run all unit tests.
+3. Resolve compiler warnings.
+4. Update documentation.
+5. Update CHANGELOG.md.
+6. Tag the release.
+7. Publish the release.
+
+---
+
+# Project Ownership
+
+Project Owner
+
+* Defines product vision.
+* Approves major architectural decisions.
+* Prioritizes development.
+* Approves releases.
+
+Technical Lead
+
+* Maintains architecture.
+* Reviews code quality.
+* Ensures consistency.
+* Guides implementation.
+* Maintains engineering standards.
+
+---
+
+# Continuous Improvement
+
+This document is expected to evolve with the project.
+
+Suggestions that improve development workflow, code quality, testing, or documentation are encouraged and should be discussed before adoption.
