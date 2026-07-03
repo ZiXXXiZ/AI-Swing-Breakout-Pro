@@ -1,469 +1,344 @@
 # CODING_STANDARD.md
 
-# AI Swing Breakout Pro v2.0
-
-## Coding Standards & Development Guidelines
-
-Version: **2.0.0-alpha.1**
+**Project:** AI Swing Breakout Pro Framework
+**Version:** 2.0.0-alpha.2
+**Last Updated:** 2026-07-03
 
 ---
 
 # Purpose
 
-This document defines the mandatory coding standards for the AI Swing Breakout Pro framework.
+This document defines the coding standards for the AI Swing Breakout Pro Framework.
 
-Every source file, class, function, and module must comply with these standards.
+Its objectives are to:
 
-The objectives are:
+* Maintain consistent code style.
+* Improve readability and maintainability.
+* Reduce defects.
+* Simplify code reviews.
+* Ensure all framework modules follow the same engineering practices.
 
-* Readability
-* Maintainability
-* Reliability
-* Performance
-* Consistency
-* Production-quality software
+All source code committed to the repository **must comply with these standards**.
 
 ---
 
-# Core Principles
+# General Principles
 
-Every module should follow:
+The framework follows these engineering principles:
 
-* Single Responsibility Principle (SRP)
-* Separation of Concerns
-* Encapsulation
-* Defensive Programming
-* Low Coupling
-* High Cohesion
-* Reusable Components
+* Keep code simple.
+* Prefer readability over cleverness.
+* One responsibility per module.
+* One responsibility per class.
+* Avoid duplicated logic.
+* Prefer composition over tightly coupled designs.
+* Design for reuse.
+* Write code that is easy to test.
 
 ---
 
 # Project Structure
 
 ```text
-Experts/
-Include/
-Documentation/
-Presets/
-Reports/
+Core/
 Tests/
+Examples/
+Documentation/
 ```
 
-Each module belongs in its own folder.
+Each folder has a single purpose.
 
-Never place unrelated classes in the same file.
+Production code and test code must never be mixed.
 
 ---
 
 # Naming Conventions
 
-## Classes
+## Files
 
-```cpp
-CLogger
-CConfig
-CSymbolManager
-CTradeEngine
-```
+Use PascalCase.
 
-Always begin with:
+Examples
 
 ```text
-C
+Logger.mqh
+TimeUtils.mqh
+MathUtils.mqh
+RiskManager.mqh
 ```
 
 ---
 
-## Structures
+## Classes
+
+Use PascalCase with the `C` prefix.
+
+Examples
 
 ```cpp
-SRiskConfig
-SMarketSnapshot
-STradeStatistics
-```
-
-Always begin with:
-
-```text
-S
+class CStringUtils
+class CTimeUtils
+class CRiskManager
 ```
 
 ---
 
 ## Interfaces
 
+Use the `I` prefix.
+
+Examples
+
 ```cpp
-ILogger
+ITradeSignal
 IRiskModel
-ISignalEngine
-```
-
-Always begin with:
-
-```text
-I
+IExitRule
 ```
 
 ---
 
 ## Enumerations
 
+Use PascalCase with an `E` prefix.
+
+Examples
+
 ```cpp
-ENUM_SIGNAL_TYPE
-ENUM_MARKET_REGIME
-ENUM_LOG_LEVEL
+enum ETradeDirection
+enum EOrderState
 ```
 
-Always begin with:
-
-```text
-ENUM_
-```
+Enumerator values should be descriptive and consistently prefixed where appropriate.
 
 ---
 
-## Constants
+## Methods
 
-Use:
+Use PascalCase.
+
+Examples
 
 ```cpp
-const double
-const int
-const ulong
+CalculateRisk()
+NormalizePrice()
+FormatDate()
 ```
 
-Avoid unnecessary preprocessor macros when typed constants are appropriate.
+Method names should clearly express the action performed.
 
 ---
 
-# Variable Naming
+## Variables
 
-## Member Variables
+### Local Variables
 
-Private members:
-
-```cpp
-m_bid
-m_ask
-m_spread
-m_logger
-m_initialized
-```
-
-Prefix:
-
-```text
-m_
-```
-
----
-
-## Local Variables
-
-Use descriptive camelCase names.
-
-Example:
+Use camelCase.
 
 ```cpp
 currentPrice
-stopLoss
-riskAmount
+riskPercent
 tradeVolume
 ```
 
-Avoid names like:
+### Member Variables
+
+Prefix with `m_`.
 
 ```cpp
-a
-b
-temp
-x
+m_symbol
+m_magicNumber
+m_positionSize
 ```
 
-unless used in a very small scope.
+### Static Members
 
----
-
-## Global Variables
-
-Avoid global variables.
-
-Only singleton-style shared services may exist globally when justified.
-
----
-
-# Function Naming
-
-Functions should describe an action.
-
-Examples:
+Prefix with `s_`.
 
 ```cpp
-Initialize()
-Validate()
-LoadInputs()
-CalculateATR()
-OpenPosition()
-ClosePosition()
+s_instance
+s_version
 ```
 
-Avoid vague names like:
+### Constants
+
+Use uppercase with underscores.
 
 ```cpp
-Run()
-DoWork()
-Process()
+MAX_TRADES
+DEFAULT_MAGIC
+SECONDS_PER_DAY
 ```
 
 ---
 
-# File Organization
+# File Header
 
-Every file begins with:
+Every source file should begin with a standard header.
 
 ```cpp
 //+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
-//| File    : Logger.mqh                                              |
-//| Version : 2.0.0-alpha.1                                           |
-//| Purpose : Centralized logging                                     |
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : <Module Name>                                          |
+//| File    : <File Name>                                            |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0                                                  |
 //+------------------------------------------------------------------+
 ```
 
-Then:
+---
 
-* Include guard
-* Includes
-* Constants
-* Enumerations
-* Structures
-* Classes
+# Include Rules
+
+* Include only what is required.
+* Prefer project-relative includes.
+* Avoid unnecessary dependency chains.
+* Do not create circular includes.
 
 ---
 
-# Include Guards
+# Class Design
 
-Every header must use include guards.
+Classes should have a single responsibility.
 
-Example:
+Utility classes should:
 
-```cpp
-#ifndef __LOGGER_MQH__
-#define __LOGGER_MQH__
+* Contain only static methods.
+* Have no instance state.
+* Be stateless whenever possible.
 
-// Code
+Managers should:
 
-#endif
-```
-
----
-
-# Header Dependencies
-
-Include only what is required.
-
-Avoid unnecessary includes.
-
-Prefer forward declarations where practical.
+* Encapsulate related business logic.
+* Hide implementation details.
+* Expose a minimal public API.
 
 ---
 
 # Error Handling
 
-Never ignore return values from:
-
-* OrderSend
-* PositionSelect
-* CopyBuffer
-* IndicatorCreate
-* File operations
-
-Always validate success and log failures.
+* Always check return values.
+* Validate inputs.
+* Return meaningful status values.
+* Log unexpected conditions.
+* Avoid silently ignoring failures.
 
 ---
 
 # Logging
 
-Significant events should be logged.
+Use the framework logging facilities.
 
-Examples:
+Logging should include:
 
-* Initialization
-* Configuration errors
-* Trade requests
-* Order failures
-* Position closures
-* Critical warnings
+* Errors
+* Warnings
+* Important state transitions
+* Debug information (when enabled)
 
-Do not flood the Journal with repetitive messages.
-
----
-
-# Validation
-
-Validate:
-
-* Input parameters
-* Indicator handles
-* Array bounds
-* Symbol properties
-* Trade conditions
-
-Never assume values are valid.
-
----
-
-# Magic Numbers
-
-Avoid unexplained numeric literals.
-
-Instead of:
-
-```cpp
-if(spread > 30)
-```
-
-use:
-
-```cpp
-if(spread > MaxSpreadPoints)
-```
+Avoid excessive logging inside high-frequency loops.
 
 ---
 
 # Comments
 
-Comment **why**, not **what**.
+Comments should explain **why**, not **what**.
 
-Good:
+Avoid comments that simply restate the code.
 
-```cpp
-// Prevent trading during excessive spread
-```
-
-Avoid:
-
-```cpp
-// Increase i by 1
-i++;
-```
-
-Only add comments where they improve understanding.
-
----
-
-# Formatting
-
-Use consistent indentation (4 spaces or one tab throughout the project).
-
-Always use braces:
-
-```cpp
-if(condition)
-{
-    ExecuteTrade();
-}
-```
-
-Avoid single-line control statements without braces.
-
----
-
-# Performance
-
-Avoid:
-
-* Repeated indicator creation
-* Duplicate calculations
-* Excessive memory allocation
-* Unnecessary loops
-
-Cache expensive calculations.
-
----
-
-# Resource Management
-
-Every acquired resource must be released.
-
-Examples:
-
-* Indicator handles
-* File handles
-* Dynamic objects
-
-Ensure cleanup in `OnDeinit()` or destructors where appropriate.
-
----
-
-# Compile Quality
-
-Every module must compile with:
-
-* Zero compiler errors
-* Zero compiler warnings
-
-Compilation is required before committing changes.
-
----
-
-# Testing Requirements
-
-Each module must pass:
-
-1. Compile test
-2. Unit test (where applicable)
-3. Integration test
-4. Strategy Tester verification
-
----
-
-# Git Workflow
-
-After each completed module:
-
-1. Compile successfully
-2. Run basic tests
-3. Commit changes
-4. Push to GitHub
-
-Example commit messages:
-
-```
-Complete Config module
-Implement Logger
-Add Indicator Cache
-Fix ATR calculation
-```
-
-Keep commits focused on a single logical change.
+Prefer descriptive function and variable names over excessive comments.
 
 ---
 
 # Documentation
 
-Every public class should include:
+Public APIs should include documentation describing:
 
 * Purpose
-* Responsibilities
-* Public methods
-* Dependencies
-
-Keep documentation synchronized with code changes.
-
----
-
-# Future Enhancements
-
-These standards may evolve as the framework grows.
-
-Any significant change to coding practices should be documented here and reviewed before adoption.
+* Parameters
+* Return value
+* Side effects
+* Usage notes (if applicable)
 
 ---
 
-# Guiding Principle
+# Formatting
 
-> **Write code that is easy to understand, easy to test, easy to maintain, and safe to extend.**
+Use consistent formatting throughout the project.
 
-The goal is not simply to make the EA work today, but to create a framework that remains reliable and maintainable through future versions.
+* Indent with spaces (or the team's agreed convention).
+* Opening braces on a consistent line style.
+* One statement per line.
+* Keep functions focused and reasonably short.
+
+---
+
+# Performance
+
+* Avoid unnecessary allocations.
+* Cache repeated calculations.
+* Minimize repeated indicator calls.
+* Prefer early returns to deeply nested conditions.
+* Measure performance before optimizing.
+
+---
+
+# Memory Management
+
+* Release resources deterministically.
+* Avoid leaks.
+* Initialize variables before use.
+* Clean up indicator handles and dynamic objects when no longer needed.
+
+---
+
+# Testing Requirements
+
+Every public module should have a corresponding unit test.
+
+Tests should cover:
+
+* Normal behavior
+* Boundary conditions
+* Invalid input
+* Error handling
+* Regression scenarios
+
+---
+
+# Code Review Checklist
+
+Before code is merged, verify:
+
+* Compiles successfully
+* Zero compiler errors
+* Zero compiler warnings
+* Coding standards followed
+* Public APIs documented
+* Unit tests updated
+* No duplicated logic
+* No unnecessary dependencies
+* Documentation updated if required
+
+---
+
+# Definition of Done
+
+A task is complete only when:
+
+* Code compiles successfully.
+* Compiler reports zero errors.
+* Compiler reports zero warnings.
+* Unit tests pass.
+* Documentation is synchronized.
+* Coding standards are satisfied.
+* The architecture remains consistent.
+
+---
+
+# Continuous Improvement
+
+This standard is a living document.
+
+Changes should be proposed whenever they improve readability, maintainability, performance, or consistency across the framework.
+
+All approved changes should be reviewed and adopted consistently throughout the repository.
