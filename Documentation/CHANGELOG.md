@@ -18,7 +18,7 @@ Example:
 
 ---
 
-# Version 2.0.0-alpha.2
+# Version 2.0.0-alpha.3
 
 **Status**
 
@@ -32,228 +32,111 @@ July 2026
 
 # Summary
 
-This release establishes the project foundation, architecture, development workflow, and documentation standards for AI Swing Breakout Pro.
-
-The project transitions from initial planning into production framework development.
+This release rebuilds `MathUtils.mqh` and reconciles all project documentation against the actual contents of the repository, after an export of the real project directory revealed significantly more implemented code than previous documentation tracked.
 
 ---
 
 # Added
 
-## Documentation
-
-Added
-
-* REPOSITORY_AUDIT.md
-* ARCHITECTURE.md
-* CODING_STANDARD.md
-* PROJECT_CONTEXT.md
-* DECISIONS.md
-* ROADMAP.md
-* CHANGELOG.md
-
-These documents now define:
-
-* project architecture
-* coding standards
-* workflow
-* engineering decisions
-* roadmap
-* operational context
-
----
-
 ## Core
 
-Implemented
+Rebuilt
 
 ```text
-Constants.mqh
-Types.mqh
+MathUtils.mqh
 ```
 
-These provide the common foundation used by all framework modules.
+Complete rewrite. Static-only `CMathUtils`, epsilon comparisons sourced from `CConstants::EPSILON`/consumer-supplied values, no Trading/Risk domain logic mixed in (per ADR-003). Includes floating-point comparison, range/clamp utilities, safe arithmetic, percentage helpers, angle conversion, and array-based statistics (mean, variance, standard deviation, median).
 
 ---
 
-## Core Structures
+## Documentation
 
-Implemented
-
-```text
-TradeStructures.mqh
-MarketStructures.mqh
-RiskStructures.mqh
-AccountStructures.mqh
-StatisticsStructures.mqh
-```
-
-These files establish the shared data model used throughout the framework.
-
----
-
-# Changed
-
-## Development Workflow
-
-Development workflow updated.
-
-Previous approach:
-
-```text
-Incremental code assembly
-```
-
-Current approach:
-
-```text
-Architecture Review
-↓
-
-Complete Source File
-
-↓
-
-Compile Verification
-
-↓
-
-Integration Verification
-
-↓
-
-Documentation Update
-
-↓
-
-Git Commit
-```
-
-Framework modules are now developed as complete source files rather than incremental snippets.
-
----
-
-## Repository Policy
-
-GitHub is now the single source of truth.
-
-Documentation and implementation must remain synchronized.
-
----
-
-## Include Policy
-
-Standardized on project-relative include paths.
-
-Example:
-
-```cpp
-#include "../Types.mqh"
-```
-
-Global MetaTrader Include paths are no longer permitted for project modules.
-
----
-
-## Documentation Strategy
-
-Documentation now evolves alongside implementation.
-
-Required documentation:
+Reconciled to match an actual repository export:
 
 * PROJECT_CONTEXT.md
 * ARCHITECTURE.md
-* CODING_STANDARD.md
-* DECISIONS.md
 * ROADMAP.md
-* CHANGELOG.md
+* CHANGELOG.md (this file)
+* DECISIONS.md (new ADR-011)
 
 ---
 
-# Deprecated
+# Fixed
 
-Incremental framework assembly using multiple partial chat responses.
+## MathUtils.mqh — Structural Scope Bug
 
-Reason:
+The previous implementation was not simply incomplete — its `class CMathUtils { ... }` body closed after the first section (`Basic Math`), leaving approximately 480 subsequent lines (price math, statistics, trading/risk formulas, safe-math helpers) declared as `static` methods **outside any class**. Any call site using `CMathUtils::NormalizePrice(...)` or similar would have failed to compile. The file also hardcoded its epsilon value (`1e-9`) instead of referencing `CConstants::EPSILON`, decoupling it from the rest of Core.
 
-* increased syntax errors
-* duplicated code
-* inconsistent ordering
-* difficult maintenance
+## MathUtils.mqh — Compile Errors on First Build ("constant expected")
+
+The rebuilt file's first compile attempt produced 8 "constant expected" errors, all on methods using `epsilon = CConstants::EPSILON` as a default parameter value. Root cause: MQL5 does not accept a static class member as a default parameter value, even when that member is declared `const`. Only true compile-time literals are accepted in that position.
+
+Resolved by splitting each affected method into a two-overload pair:
+
+```cpp
+static bool IsEqual(const double a, const double b);
+static bool IsEqual(const double a, const double b, const double epsilon);
+```
+
+The no-epsilon overload calls the explicit-epsilon overload, passing `CConstants::EPSILON` as an ordinary argument (legal at any call site — the restriction is specific to default-parameter *declarations*). Applied to `IsEqual`, `IsZero`, `IsGreater`, `IsLess`, `IsGreaterOrEqual`, `IsLessOrEqual`, `IsBetween`, and `Sign`. Caller-facing behavior is unchanged. Re-verified in MetaEditor: **0 errors, 0 warnings**.
 
 ---
 
-# Planned
+# Discovered (Repository Reconciliation)
 
-Current priority:
-
-```text
-Include/Core/MathUtils.mqh
-```
-
-Next planned modules:
+An export of the actual project directory was reviewed this cycle. It contained the following modules, none of which were tracked in any previous version of `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, or this file:
 
 ```text
-Platform.mqh
-
-Logger.mqh
-
-ValidationUtils.mqh
+Include/Core/Base/BaseObject.mqh
+Include/Core/Config.mqh
+Include/Core/InputParameters.mqh
+Include/Core/Version.mqh
+Include/Core/Error/ErrorCodes.mqh
+Include/Core/Error/ErrorHandler.mqh
+Include/Core/Error/ErrorInfo.mqh
+Include/Core/Error/TestErrorHandler.mqh
+Include/Core/Logging/Logger.mqh
+Include/Core/Logging/LogLevel.mqh
+Include/Core/Logging/LogRecord.mqh
+Include/Core/Logging/DefaultLogFormatter.mqh
+Include/Core/Logging/JournalLogOutput.mqh
+Include/Core/Logging/Interfaces/ILogFormatter.mqh
+Include/Core/Logging/Interfaces/ILogOutput.mqh
+Include/Core/Utilities/StringUtils.mqh
+Include/Core/Utilities/TimeUtils.mqh
+Include/Tests/Framework/TestFramework.mqh
+Include/Tests/Core/Utilities/TestStringUtils.mq5 (+ compiled .ex5)
 ```
 
-After completion:
+These modules are functional in scope (error handling, logging subsystem, string/time utilities, EA input parameters, configuration, versioning, and a working test framework with one test suite) but were authored outside the documented Sprint workflow — file headers credit "OpenAI & Project Team" / "AI Swing Breakout Team" rather than the current process — and have not been reviewed for `CODING_STANDARD.md` compliance.
 
-Infrastructure Layer
-
-↓
-
-Indicator Framework
-
-↓
-
-Risk Engine
-
-↓
-
-Trading Engine
-
-↓
-
-AI Engine
+A top-level `AI_SwingBreakout_Pro.rar` archive was also found in the project root; its purpose is unverified and it may be a stale backup.
 
 ---
 
 # Known Issues
 
-Current repository review identified:
+## Newly Identified (Standards Compliance)
 
-* MathUtils.mqh requires complete rewrite.
-* Legacy incremental implementation should not be reused.
-* Existing documentation has been updated to reflect the new development workflow.
+* Legacy modules use `__NAME_MQH__` include guards instead of the project's `AI_SWINGBREAKOUT_CORE_NAME_MQH` convention.
+* Legacy modules use `ENUM_X`-style enum naming instead of the `EX` PascalCase convention.
+* `Error/TestErrorHandler.mqh` uses an absolute/global include path (`#include <Core/Error/ErrorHandler.mqh>`), violating the Include Policy.
+* Version strings are inconsistent across legacy files (`1.0.0`, `2.0.0-alpha`, `2.0.0-alpha.2`).
+* Several legacy file headers omit the `Module` and `Author: ZiXXXiZ` lines required by `CODING_STANDARD.md`.
+* `AI_SwingBreakout_Pro.rar` in the project root is unverified.
 
-No architectural blockers currently exist.
+A full correctness/compliance audit of these modules was deliberately deferred this cycle — see DECISIONS.md, ADR-011 — in favor of first bringing documentation in line with reality.
+
+## Carried Forward
+
+* None. `MathUtils.mqh` has been compile-verified in MetaEditor (0 errors, 0 warnings) — see **Fixed**, below.
 
 ---
 
 # Engineering Decisions Introduced
 
-The following engineering decisions became official during this release:
-
-* GitHub is the single source of truth.
-* Core remains dependency-free.
-* Relative include paths only.
-* Production-quality implementations only.
-* Complete source file generation.
-* Documentation-first synchronization.
-* LDN ("Let Do Next") adopted as the standard workflow command.
-
-See:
-
-```text
-Documentation/DECISIONS.md
-```
-
-for detailed rationale.
+* ADR-011: Documentation Reconciliation & Legacy Module Policy — see `DECISIONS.md`.
 
 ---
 
@@ -265,30 +148,22 @@ Current Phase
 Foundation Layer
 ```
 
-Completed
+Overall Progress (revised)
 
-* Documentation Foundation
-* Core Definitions
-* Core Structures
+```text
+Approximately 30% (up from a previously-reported 20%, reflecting reconciliation with actual repository contents — not equivalent new work performed this cycle)
+```
 
 Current Sprint
 
 ```text
-Sprint 004
+Sprint 005 — Platform Services
 ```
 
 Current Task
 
 ```text
-Rebuild Include/Core/MathUtils.mqh
-```
-
-Overall Progress
-
-Approximately
-
-```text
-20%
+Build Include/Core/Platform.mqh
 ```
 
 ---
@@ -298,14 +173,11 @@ Approximately
 Version
 
 ```text
-2.0.0-alpha.3
+2.0.0-alpha.4
 ```
 
 Expected deliverables:
 
-* Production-quality MathUtils.mqh
 * Platform.mqh
-* Logger.mqh
 * ValidationUtils.mqh
-
-This milestone completes the Core utility layer and prepares the framework for Infrastructure development.
+* Sprint 006 kickoff: legacy module standards reconciliation

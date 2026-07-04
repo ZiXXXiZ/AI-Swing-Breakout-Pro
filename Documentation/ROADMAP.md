@@ -2,7 +2,7 @@
 
 # ROADMAP
 
-**Version:** 2.0.0-alpha.2
+**Version:** 2.0.0-alpha.3
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -41,17 +41,19 @@ Development proceeds module-by-module rather than feature-by-feature.
 
 ---
 
-# Overall Progress
+# Overall Progress (Reconciled July 2026)
+
+A repository export reviewed this cycle showed materially more implemented than previous roadmap versions tracked. Progress bars below have been revised. Note that a meaningful share of "Foundation Layer" progress is **existing, unreviewed code** discovered during reconciliation, not newly built work — see Known Issues in `PROJECT_CONTEXT.md`.
 
 ```text
-Foundation Layer          ████░░░░░░  40%
+Foundation Layer          ██████▌░░░  65%
 Infrastructure Layer      ░░░░░░░░░░   0%
 Trading Layer             ░░░░░░░░░░   0%
 Risk Layer                ░░░░░░░░░░   0%
 AI Layer                  ░░░░░░░░░░   0%
 Testing & Optimization    ░░░░░░░░░░   0%
 
-Overall Project Progress  ███░░░░░░░  20%
+Overall Project Progress  ███▎░░░░░░  32%
 ```
 
 ---
@@ -100,11 +102,11 @@ Deliverables:
 
 ---
 
-### Sprint 004 — Core Utilities
+### Sprint 004 — Core Utilities (MathUtils)
 
-Status: 🚧 In Progress
+Status: ✅ Completed this cycle
 
-Primary Objective:
+Objective:
 
 Rebuild:
 
@@ -112,20 +114,43 @@ Rebuild:
 Include/Core/MathUtils.mqh
 ```
 
-Reason:
+What was found:
 
-The original incremental implementation introduced structural compile errors.
+The previous file had a structural scope bug, not just "compile errors": its class body closed after the first section (`Basic Math`), and roughly 480 subsequent lines of intended methods — price math, statistics, trading/risk math, safe-math helpers — were left floating outside the class entirely. It also hardcoded its epsilon value instead of sourcing it from `CConstants::EPSILON`.
 
-Decision:
+What was done:
 
-Rewrite the file completely as a production-quality implementation.
+Rewrote the file completely as a Core-only, static, epsilon-consistent utility class (`CMathUtils`). Deliberately excluded Trading/Risk-domain formulas (`PositionSize`, `RiskOfRuin`, `ProfitFactor`, `WinRate`, `DrawdownPercent`, etc.) that existed in the broken version — those belong in the future Risk module per ADR-003, not in Core.
 
 Deliverables:
 
-* MathUtils.mqh
-* Unit verification
-* Compile verification
-* Documentation update
+* MathUtils.mqh — done
+* Compile verification — **done** (MetaEditor: 0 errors, 0 warnings)
+* Documentation update — done (this cycle)
+
+Note: initial compile attempt surfaced 8 "constant expected" errors. Root cause was an MQL5 limitation, not a logic error: static class members (`CConstants::EPSILON`) are not accepted as default parameter values, even though `EPSILON` is `const`. Fixed by splitting each affected method (`IsEqual`, `IsZero`, `IsGreater`, `IsLess`, `IsGreaterOrEqual`, `IsLessOrEqual`, `IsBetween`, `Sign`) into a two-overload pair — one explicit-epsilon version, one convenience version that calls it with `CConstants::EPSILON` passed as a normal argument. Re-verified: 0 errors, 0 warnings.
+
+---
+
+### Sprint 004b — Repository Reconciliation (NEW)
+
+Status: ✅ Completed this cycle
+
+Trigger:
+
+An export of the actual project directory was reviewed and found to contain substantially more than prior documentation tracked, including a full Error-handling subsystem, a full Logging subsystem, `Config.mqh`, `InputParameters.mqh`, `Version.mqh`, `BaseObject.mqh`, `StringUtils.mqh`, `TimeUtils.mqh`, and a `Tests/` directory with a working test framework and one test suite — none previously documented.
+
+Deliverables:
+
+* PROJECT_CONTEXT.md — reconciled to actual repository contents
+* ARCHITECTURE.md — reconciled folder structure and module inventory
+* ROADMAP.md — this file, progress bars and sprint history corrected
+* CHANGELOG.md — new entry documenting the reconciliation
+* DECISIONS.md — ADR-011 recording the reconciliation decision and legacy-module policy
+
+Explicitly deferred:
+
+* Full line-by-line compliance audit of the newly-documented legacy modules (deferred by decision, not oversight — see ADR-011)
 
 ---
 
@@ -137,37 +162,69 @@ Deliverables:
 
 ```text
 Include/Core/Platform.mqh
-Include/Core/Logger.mqh
 Include/Core/ValidationUtils.mqh
 ```
 
+Note: `Include/Core/Logging/Logger.mqh` already exists (pending standards review), so a new `Logger.mqh` is no longer a Sprint 005 deliverable — it has been replaced with a review/reconciliation task for the existing file instead.
+
 Goal:
 
-Create the platform abstraction layer used by all higher-level modules.
+Create the platform abstraction layer used by all higher-level modules, and bring the existing Logging subsystem into documented, standards-verified status.
+
+---
+
+### Sprint 006 — Legacy Standards Reconciliation
+
+Status: Planned (new)
+
+Goal:
+
+Bring the "present but not yet reviewed" Core modules into compliance with `CODING_STANDARD.md`, or formally document an exception per module.
+
+Candidates:
+
+```text
+Base/BaseObject.mqh
+Config.mqh
+InputParameters.mqh
+Version.mqh
+Error/ (4 files)
+Logging/ (7 files)
+Utilities/StringUtils.mqh
+Utilities/TimeUtils.mqh
+```
+
+Known concrete issues to resolve:
+
+* Include guard style (`__NAME_MQH__` → `AI_SWINGBREAKOUT_CORE_NAME_MQH`)
+* Enum naming (`ENUM_X` → `EX`)
+* Absolute include in `Error/TestErrorHandler.mqh`
+* Header format consistency (Module/Author lines)
+* Version string consistency
 
 ---
 
 # Phase 2 — Infrastructure
 
-Status: Planned
+Status: Partially started (unreviewed)
 
 Modules:
 
 ```text
-Configuration
-File System
-Logging
-Serialization
-Time Utilities
-Symbol Utilities
-Session Utilities
-Error Handling
-Event System
+Configuration        — Config.mqh exists, pending review
+File System           — not started
+Logging                — Logger.mqh + subsystem exists, pending review
+Serialization          — not started
+Time Utilities          — TimeUtils.mqh exists, pending review
+Symbol Utilities         — not started
+Session Utilities         — not started
+Error Handling             — ErrorHandler.mqh + subsystem exists, pending review
+Event System                — not started
 ```
 
 Deliverable:
 
-Complete infrastructure services.
+Complete and standards-verify infrastructure services.
 
 ---
 
@@ -231,6 +288,8 @@ Drawdown Protection
 Correlation Filter
 Trade Validation
 ```
+
+Note: the broken legacy `MathUtils.mqh` contained several formulas belonging here (`PositionSize`, `RiskOfRuin`, `ProfitFactor`, `Expectancy`, `BreakEvenWinRate`, `RecoveryFactor`, `WinRate`, `DrawdownPercent`). These are logically sound as formulas but were misplaced in Core. They should be salvaged into this module rather than re-derived from scratch, once this phase begins.
 
 Deliverable:
 
@@ -303,15 +362,15 @@ AI-assisted decision engine.
 
 # Phase 9 — Testing
 
-Status: Planned
+Status: Partially started (unreviewed)
 
 Modules:
 
 ```text
-Unit Tests
-Integration Tests
-Stress Tests
-Regression Tests
+Unit Tests            — TestFramework.mqh + one test suite (StringUtils) exist
+Integration Tests      — not started
+Stress Tests             — not started
+Regression Tests          — not started
 ```
 
 Deliverable:
@@ -363,22 +422,26 @@ Release Criteria:
 Current Sprint:
 
 ```text
-Sprint 004
+Sprint 005
 ```
 
 Current Task:
 
 ```text
-Rebuild Include/Core/MathUtils.mqh
+Build Include/Core/Platform.mqh
 ```
 
 Next Tasks:
 
 1. Build `Include/Core/Platform.mqh`
-2. Build `Include/Core/Logger.mqh`
-3. Build `Include/Core/ValidationUtils.mqh`
-4. Begin Infrastructure Layer
-5. Build Risk Engine foundation
+2. Build `Include/Core/ValidationUtils.mqh`
+3. Begin Sprint 006 (Legacy Standards Reconciliation)
+4. Resolve absolute include in `Error/TestErrorHandler.mqh`
+5. Verify/remove `AI_SwingBreakout_Pro.rar`
+6. Begin Infrastructure Layer standards review
+7. Build Risk Engine foundation (salvage formulas from legacy MathUtils.mqh)
+
+Note: when reviewing legacy modules in Sprint 006, specifically check for the same static-member-as-default-parameter pattern that caused MathUtils.mqh's compile errors — any legacy file using `SomeClass::CONST` as a default argument will fail the same way.
 
 ---
 
