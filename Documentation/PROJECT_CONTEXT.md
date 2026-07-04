@@ -94,8 +94,7 @@ A repository audit (upload of the actual `AI_SwingBreakout_Pro` project archive)
 ```
 AI_SwingBreakout_Pro/
 │
-├── AI_SwingBreakout_Pro.rar        ← Unverified. Appears to be a stale backup
-│                                     archive. Needs manual review/removal.
+├── AI_SwingBreakout_Pro.mq5        ← main EA entry point (root, sibling of Include/)
 │
 ├── Documentation/
 │
@@ -185,6 +184,14 @@ Incorrect
 
 Never use MetaTrader global Include paths.
 
+**Exception:** `AI_SwingBreakout_Pro.mq5` sits at the project root, outside `Include/`. It is the only file that prefixes framework includes with `Include/`:
+
+```cpp
+#include "Include/Core/Types.mqh"
+```
+
+Files inside `Include/Core/...` are unaffected — see `ARCHITECTURE.md` Section 7 and `DECISIONS.md` ADR-012.
+
 ---
 
 # Completed Modules (Reconciled)
@@ -252,8 +259,9 @@ Identified while reconciling documentation to the actual repository, without a f
 * **Version inconsistency.** Some legacy files self-report `Version: 1.0.0` or `2.0.0-alpha` (without a patch/stage suffix) rather than the current `2.0.0-alpha.2` / `2.0.0-alpha.3` scheme.
 * **Header format inconsistency.** Several legacy files omit the `Module` and `Author: ZiXXXiZ` header lines required by `CODING_STANDARD.md` Section 4.
 * **Previously undocumented, and therefore never scheduled for review.** These modules were not listed in prior versions of this document, `ARCHITECTURE.md`, `ROADMAP.md`, or `CHANGELOG.md`.
+* **`Core/Error` currently depends on `Core/Logging`.** `ErrorInfo.mqh` includes `LogLevel.mqh` and uses `ENUM_LOG_LEVEL` for its `Severity` field. ADR-012 adopts mutual isolation between Error and Logging as target design; this is the concrete gap against that target, tracked for Sprint 006.
 
-None of these are functional/compile blockers by themselves (aside from the absolute-include violation, which should still compile inside a real MetaTrader install but breaks portability). They are tracked here as technical debt. A full correctness/compliance audit has been deliberately deferred — see `DECISIONS.md`, ADR-011.
+None of these are functional/compile blockers by themselves (aside from the absolute-include violation, which should still compile inside a real MetaTrader install but breaks portability). They are tracked here as technical debt. A full correctness/compliance audit has been deliberately deferred — see `DECISIONS.md`, ADR-011 and ADR-012.
 
 ---
 
@@ -292,8 +300,11 @@ Status: **Completed this cycle.** The previous incremental version had a structu
 
 1. Decide disposition of legacy Core modules (Base, Config, InputParameters, Version, Error/*, Logging/*, Utilities/*) — bring into compliance, or formally grandfather with a documented exception. See DECISIONS.md ADR-011.
 2. Resolve absolute include path in `Error/TestErrorHandler.mqh`.
-3. Build `Include/Core/Platform.mqh`.
-4. Continue Risk module.
+3. Decouple `ErrorInfo.mqh` from `LogLevel.mqh` per ADR-012 (give Error its own severity type).
+4. Build `Include/Core/Platform.mqh`.
+5. Continue Risk module.
+
+Resolved this cycle: main EA file location confirmed (`AI_SwingBreakout_Pro.mq5`, project root) and its include-path convention documented — see ADR-012. `AI_SwingBreakout_Pro.rar` confirmed not part of the project and removed from documentation.
 
 ---
 

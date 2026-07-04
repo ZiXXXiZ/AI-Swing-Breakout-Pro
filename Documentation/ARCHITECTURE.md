@@ -32,6 +32,8 @@ The structure below was verified against an actual export of the repository and 
 ```text
 AI_SwingBreakout_Pro/
 │
+├── AI_SwingBreakout_Pro.mq5   ← main EA entry point (root, sibling of Include/ — see Section 7)
+│
 ├── Documentation/
 │
 ├── Include/
@@ -69,12 +71,6 @@ AI_SwingBreakout_Pro/
 │   │   │   └── TimeUtils.mqh
 │   │   └── Version.mqh
 │   │
-│   ├── Indicators/        (planned, not yet started)
-│   ├── Trading/            (planned, not yet started)
-│   ├── Risk/                (planned, not yet started)
-│   ├── AI/                   (planned, not yet started)
-│   ├── UI/                    (planned, not yet started)
-│   │
 │   └── Tests/
 │       ├── Core/
 │       │   └── Utilities/
@@ -89,6 +85,8 @@ AI_SwingBreakout_Pro/
 ```
 
 Note: `Utilities/` and `Error/` and `Logging/` exist nested inside `Core/`, not as separate top-level Include directories as earlier drafts of this document assumed. This document now reflects that nesting.
+
+Note: `Include/Indicators/`, `Include/Trading/`, `Include/Risk/`, `Include/AI/`, and `Include/UI/` do not exist on disk yet — they are future module locations, covered under the Long-Term Roadmap (Section 13) and `ROADMAP.md` Phases 4–8, not part of the current confirmed tree.
 
 ---
 
@@ -214,6 +212,31 @@ Examples:
 
 ✘ Core → AI
 
+**Target design within Core (ADR-012).** The rules above (Section 6, existing) govern Core vs. higher layers. Within Core itself, the target — not yet fully implemented — is:
+
+```text
+Base
+   ↓
+Types + Constants + Version
+   ↓
+Logging  +  Error   (parallel, mutually isolated — neither depends on the other)
+   ↓
+Feature modules (Trading / AI / Risk / UI)
+```
+
+Forbidden-dependency table (target, tracked via Sprint 006):
+
+| From | Must not depend on | Status |
+|---|---|---|
+| Error | Logging | **Not yet true** — `ErrorInfo.mqh` currently includes `LogLevel.mqh` |
+| Logging | Error | True today |
+| Types | anything | True today |
+| BaseObject | anything | True today |
+| Config | Logger / Platform | True today |
+| Core | Trading / AI / UI | True today |
+
+Do not describe Error/Logging isolation as complete elsewhere in this document or in `PROJECT_CONTEXT.md` until the `ErrorInfo.mqh` refactor (giving it its own severity type instead of `ENUM_LOG_LEVEL`) actually lands.
+
 ---
 
 # 7. Include Policy
@@ -237,6 +260,14 @@ Every include must be relative to the current file.
 This allows the entire project to remain portable inside the `Experts/AI_SwingBreakout_Pro` directory.
 
 **Known violation:** `Include/Core/Error/TestErrorHandler.mqh` currently uses `#include <Core/Error/ErrorHandler.mqh>` (a global path). This needs correction — see `PROJECT_CONTEXT.md`, Known Issues.
+
+**Confirmed exception — the root EA file.** `AI_SwingBreakout_Pro.mq5` lives at the project root, outside `Include/`. It is the only file in the project that prefixes framework includes with `Include/`:
+
+```cpp
+#include "Include/Core/Types.mqh"
+```
+
+Every file inside `Include/Core/...` is unaffected by this — it continues to resolve relative to its own folder exactly as described above. See DECISIONS.md, ADR-012.
 
 ---
 

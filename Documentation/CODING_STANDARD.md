@@ -117,6 +117,15 @@ Experts/
     AI_SwingBreakout_Pro/
 ```
 
+**Exception — the root EA file.** `AI_SwingBreakout_Pro.mq5` lives at the project root, a sibling of `Include/`, not inside it. As the only project file outside `Include/`, it prefixes framework includes accordingly:
+
+```cpp
+#include "Include/Core/Types.mqh"
+#include "Include/Core/Error/ErrorHandler.mqh"
+```
+
+Every file inside `Include/Core/...` is unaffected and continues to use ordinary relative paths as shown above (`"Constants.mqh"`, `"../Logging/LogLevel.mqh"`, etc.). See DECISIONS.md, ADR-012.
+
 ---
 
 # 6. Dependency Rules
@@ -148,6 +157,8 @@ Core
 Core never depends on higher-level modules.
 
 Circular dependencies are prohibited.
+
+**Target design for Core subsystems (ADR-012):** `Core/Error` and `Core/Logging` should not depend on each other, and new subsystems should generally own their own enums rather than importing a sibling subsystem's types. This is the direction new code should follow. It is not yet fully true of the existing codebase — `ErrorInfo.mqh` currently depends on `LogLevel.mqh` — so don't assume this isolation exists elsewhere until `PROJECT_CONTEXT.md`/`ROADMAP.md` mark it done.
 
 ---
 

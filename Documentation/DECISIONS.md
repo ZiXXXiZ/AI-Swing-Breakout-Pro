@@ -463,6 +463,49 @@ Sprint 006 (Legacy Standards Reconciliation) is added to the roadmap as a prereq
 
 ---
 
+# ADR-012
+
+## Title
+
+Root EA Include Convention & Core Subsystem Isolation (Error / Logging)
+
+**Status**
+
+Accepted — partially implemented (see Consequences)
+
+**Date**
+
+July 2026
+
+### Context
+
+Two related items surfaced this cycle:
+
+**(a) Main EA file location.** `AI_SwingBreakout_Pro.mq5` lives at the project root (`AI_SwingBreakout_Pro/AI_SwingBreakout_Pro.mq5`), a sibling of `Include/`, `Documentation/`, `Source/`, `Tests/`, `Resources/` — not inside `Include/`. This was not previously documented anywhere.
+
+**(b) A proposed "Core Architecture Lock."** A set of stricter dependency rules was proposed for Core: a one-way flow (`Base → Types/Constants/Version → Logging/Error (parallel) → feature modules`), a forbidden-dependency table, and a rule that `Core/Error` and `Core/Logging` must never include each other. The original proposal also stated includes should never use `../` backtracking, giving `#include "Logging/LogLevel.mqh"` as a correct example.
+
+That specific example is incorrect for this project's actual folder layout and must not be adopted as written. MQL5 resolves relative `#include` paths against the *including file's own directory*, not against `Include/` as a project root. A file in `Core/Error/` reaching into the sibling folder `Core/Logging/` requires `../Logging/LogLevel.mqh` — `"Logging/LogLevel.mqh"` from that location would resolve to the nonexistent `Core/Error/Logging/...` and fail to compile. Banning `../` outright would break every legitimate sibling-folder include already in use across `Structures/`, `Utilities/`, `Base/`, and `Logging/Interfaces/`.
+
+Separately, `Core/Error/ErrorInfo.mqh` currently includes `../Logging/LogLevel.mqh` and uses `ENUM_LOG_LEVEL` for its `Severity` field. This is a real, present-day dependency of Error on Logging — the forbidden-dependency table's "Error must not depend on Logging" rule is not yet true of the actual codebase.
+
+### Decision
+
+1. **Root EA include rule (adopted and in effect):** `AI_SwingBreakout_Pro.mq5`, being the one project file that lives outside `Include/`, must prefix every framework include with `Include/` — e.g. `#include "Include/Core/Types.mqh"`. Every file *inside* `Include/Core/...` continues to use ordinary relative paths (`"Constants.mqh"`, `"../Logging/LogLevel.mqh"`, etc.) exactly as ADR-002 already established. This is a clarification of ADR-002 for the one file it didn't previously cover, not a change to ADR-002 itself.
+2. **One-way dependency flow and forbidden-dependency table (adopted as target design):** `Base → Types/Constants/Version → Logging/Error (parallel, mutually isolated) → feature modules (Trading/AI/Risk/UI)`. This extends ADR-003 (Core independence) with finer-grained rules *within* Core.
+3. **Error/Logging mutual isolation (adopted as target design, NOT yet implemented):** `Core/Error` must not depend on `Core/Logging` and vice versa. Since `ErrorInfo.mqh` currently violates this, the rule is accepted as a goal, tracked as a concrete Sprint 006 task (give `SErrorInfo.Severity` its own type instead of borrowing `ENUM_LOG_LEVEL`), and is not to be described as already true in any other document until that refactor lands.
+4. **The "no `../`" include rule from the original proposal is rejected as written**, since it does not match how MQL5 resolves relative includes and would break existing, correct code. The project's include rule remains what ADR-002 and `CODING_STANDARD.md` already specify: relative to the including file, with `../` used freely for sibling/parent traversal. The only addition is item 1, above.
+5. **No cross-module enum sharing (adopted as target design for new code):** new subsystems should own their own enums rather than reaching into a sibling subsystem's types. This is a preference for new work, not a mandate to immediately refactor already-shared types outside of the specific Error/Logging case in item 3.
+
+### Consequences
+
+- `AI_SwingBreakout_Pro.mq5` can be written correctly today using the rule in item 1 — no code currently depends on this being fixed later.
+- Items 2–3 are **design intent, not current fact**. `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, and `ROADMAP.md` reflect this distinction explicitly (see their "planned" / "not yet implemented" language) so a future session doesn't assume the isolation already exists.
+- Sprint 006 (Legacy Standards Reconciliation) gains a concrete, scoped task: decouple `ErrorInfo.mqh` from `LogLevel.mqh`.
+- No file's actual include statements change as a result of this ADR alone, except future new code being written to the target design from now on.
+
+---
+
 # Future Decisions
 
 Add new decisions instead of modifying historical ones.

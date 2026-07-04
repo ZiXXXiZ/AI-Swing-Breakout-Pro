@@ -201,6 +201,7 @@ Known concrete issues to resolve:
 * Absolute include in `Error/TestErrorHandler.mqh`
 * Header format consistency (Module/Author lines)
 * Version string consistency
+* Decouple `ErrorInfo.mqh` from `LogLevel.mqh` — give `SErrorInfo.Severity` its own type instead of borrowing `ENUM_LOG_LEVEL` (per ADR-012, target design: Error and Logging must not depend on each other)
 
 ---
 
@@ -435,11 +436,12 @@ Next Tasks:
 
 1. Build `Include/Core/Platform.mqh`
 2. Build `Include/Core/ValidationUtils.mqh`
-3. Begin Sprint 006 (Legacy Standards Reconciliation)
+3. Begin Sprint 006 (Legacy Standards Reconciliation) — includes decoupling `ErrorInfo.mqh` from `LogLevel.mqh` per ADR-012
 4. Resolve absolute include in `Error/TestErrorHandler.mqh`
-5. Verify/remove `AI_SwingBreakout_Pro.rar`
-6. Begin Infrastructure Layer standards review
-7. Build Risk Engine foundation (salvage formulas from legacy MathUtils.mqh)
+5. Begin Infrastructure Layer standards review
+6. Build Risk Engine foundation (salvage formulas from legacy MathUtils.mqh)
+
+Resolved this cycle: main EA file location confirmed at project root (`AI_SwingBreakout_Pro.mq5`) with its include-path convention documented (ADR-012).
 
 Note: when reviewing legacy modules in Sprint 006, specifically check for the same static-member-as-default-parameter pattern that caused MathUtils.mqh's compile errors — any legacy file using `SomeClass::CONST` as a default argument will fail the same way.
 
