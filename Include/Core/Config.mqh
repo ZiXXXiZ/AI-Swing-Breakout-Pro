@@ -1,25 +1,14 @@
 //+------------------------------------------------------------------+
 //| Project : AI Swing Breakout Pro v2.0 Institutional Edition       |
-//| File    : Config.mqh                                             |
-//| Author  : Project Owner + OpenAI                                 |
-//| Version : 2.0.0-alpha                                            |
-//| Purpose : Global configuration, enums and validation             |
 //+------------------------------------------------------------------+
-#ifndef __CONFIG_MQH__
-#define __CONFIG_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_CONFIG_MQH
+#define AI_SWINGBREAKOUT_CORE_CONFIG_MQH
 
 #include "Version.mqh"
 
 //==================================================================
 // Enumerations
 //==================================================================
-
-enum ENUM_SIGNAL_TYPE
-{
-   SIGNAL_NONE = 0,
-   SIGNAL_BUY,
-   SIGNAL_SELL
-};
 
 enum ENUM_MARKET_REGIME
 {
@@ -72,7 +61,6 @@ struct STradeConfig
 {
    bool AllowBuy;
    bool AllowSell;
-
    bool UseBreakEven;
    bool UsePartialClose;
    bool UseATRTrailing;
@@ -91,10 +79,8 @@ struct SIndicatorConfig
 {
    int FastEMA;
    int SlowEMA;
-
    int ATRPeriod;
    int ADXPeriod;
-
    int VolumeMAPeriod;
 };
 
@@ -111,113 +97,71 @@ struct SLogConfig
 };
 
 //==================================================================
-// Global Configuration Object
+// Configuration Class
 //==================================================================
 
 class CConfig
 {
-private:
-
-   SRiskConfig       m_risk;
-   STradeConfig      m_trade;
-   SFilterConfig     m_filter;
-   SIndicatorConfig  m_indicator;
-   SDashboardConfig  m_dashboard;
-   SLogConfig        m_log;
-
 public:
+
+   // DIRECT ACCESS (MQL SAFE)
+   SRiskConfig       Risk;
+   STradeConfig      Trade;
+   SFilterConfig     Filter;
+   SIndicatorConfig  Indicator;
+   SDashboardConfig  Dashboard;
+   SLogConfig        Log;
 
    CConfig()
    {
       LoadDefaults();
    }
 
-   //--------------------------------------------------------------
-
    void LoadDefaults()
    {
-      // Risk
+      Risk.RiskPercent           = 1.0;
+      Risk.MaxDailyLossPercent   = 5.0;
+      Risk.MaxOpenPositions      = 3;
+      Risk.ProbabilityThreshold  = 0.70;
 
-      m_risk.RiskPercent           = 1.0;
-      m_risk.MaxDailyLossPercent   = 5.0;
-      m_risk.MaxOpenPositions      = 3;
-      m_risk.ProbabilityThreshold  = 0.70;
+      Trade.AllowBuy             = true;
+      Trade.AllowSell            = true;
+      Trade.UseBreakEven         = true;
+      Trade.UsePartialClose      = true;
+      Trade.UseATRTrailing       = true;
 
-      // Trading
+      Filter.UseADX              = true;
+      Filter.UseATR              = true;
+      Filter.UseVolume           = true;
+      Filter.UseSpread           = true;
+      Filter.UseSessionFilter    = true;
 
-      m_trade.AllowBuy             = true;
-      m_trade.AllowSell            = true;
-      m_trade.UseBreakEven         = true;
-      m_trade.UsePartialClose      = true;
-      m_trade.UseATRTrailing       = true;
+      Indicator.FastEMA          = 50;
+      Indicator.SlowEMA          = 200;
+      Indicator.ATRPeriod        = 14;
+      Indicator.ADXPeriod        = 14;
+      Indicator.VolumeMAPeriod   = 20;
 
-      // Filters
+      Dashboard.ShowDashboard    = true;
+      Dashboard.ShowStatistics   = true;
 
-      m_filter.UseADX              = true;
-      m_filter.UseATR              = true;
-      m_filter.UseVolume           = true;
-      m_filter.UseSpread           = true;
-      m_filter.UseSessionFilter    = true;
-
-      // Indicators
-
-      m_indicator.FastEMA          = 50;
-      m_indicator.SlowEMA          = 200;
-      m_indicator.ATRPeriod        = 14;
-      m_indicator.ADXPeriod        = 14;
-      m_indicator.VolumeMAPeriod   = 20;
-
-      // Dashboard
-
-      m_dashboard.ShowDashboard    = true;
-      m_dashboard.ShowStatistics   = true;
-
-      // Logging
-
-      m_log.Level                  = LOG_INFO;
-      m_log.WriteJournal           = true;
+      Log.Level                  = LOG_INFO;
+      Log.WriteJournal           = true;
    }
-
-   //--------------------------------------------------------------
 
    bool Validate()
    {
-      if(m_risk.RiskPercent <= 0.0)
-         return false;
+      if(Risk.RiskPercent <= 0.0) return false;
+      if(Risk.MaxDailyLossPercent <= 0.0 || Risk.MaxDailyLossPercent > 100.0) return false;
+      if(Risk.MaxOpenPositions < 1) return false;
+      if(Risk.ProbabilityThreshold < 0.0 || Risk.ProbabilityThreshold > 1.0) return false;
 
-      if(m_risk.MaxDailyLossPercent <= 0.0 ||
-         m_risk.MaxDailyLossPercent > 100.0)
-         return false;
-
-      if(m_risk.MaxOpenPositions < 1)
-         return false;
-
-      if(m_risk.ProbabilityThreshold < 0.0 ||
-         m_risk.ProbabilityThreshold > 1.0)
-         return false;
-
-      if(m_indicator.FastEMA >= m_indicator.SlowEMA)
-         return false;
-
-      if(m_indicator.ATRPeriod < 1)
-         return false;
-
-      if(m_indicator.ADXPeriod < 1)
-         return false;
+      if(Indicator.FastEMA >= Indicator.SlowEMA) return false;
+      if(Indicator.ATRPeriod < 1) return false;
+      if(Indicator.ADXPeriod < 1) return false;
 
       return true;
    }
-
-   //--------------------------------------------------------------
-   // Getters
-   //--------------------------------------------------------------
-
-   const SRiskConfig      &Risk()      const { return m_risk;      }
-   const STradeConfig     &Trade()     const { return m_trade;     }
-   const SFilterConfig    &Filter()    const { return m_filter;    }
-   const SIndicatorConfig &Indicator() const { return m_indicator; }
-   const SDashboardConfig &Dashboard() const { return m_dashboard; }
-   const SLogConfig       &Log()       const { return m_log;       }
 };
 
 #endif
