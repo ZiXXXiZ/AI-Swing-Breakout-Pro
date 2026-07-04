@@ -1,6 +1,11 @@
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+﻿//+------------------------------------------------------------------+
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : Platform.mqh                                           |
+//| Purpose : Platform abstraction — terminal, account, and          |
+//|           framework identity access via CPlatform                |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_CORE_PLATFORM_MQH
 #define AI_SWINGBREAKOUT_CORE_PLATFORM_MQH

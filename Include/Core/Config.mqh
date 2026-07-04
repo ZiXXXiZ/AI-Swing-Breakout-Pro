@@ -1,5 +1,10 @@
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro v2.0 Institutional Edition       |
+﻿//+------------------------------------------------------------------+
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
+//| File    : Config.mqh                                             |
+//| Purpose : Global configuration, enums, and validation             |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_CORE_CONFIG_MQH
 #define AI_SWINGBREAKOUT_CORE_CONFIG_MQH
@@ -20,13 +25,18 @@ enum ENUM_MARKET_REGIME
    REGIME_LOW_VOLATILITY
 };
 
-enum ENUM_LOG_LEVEL
+// Renamed from ENUM_LOG_LEVEL — that name and its members are already owned by
+// Include/Core/Logging/LogLevel.mqh, which Logger.mqh, LogRecord.mqh, and
+// DefaultLogFormatter.mqh all depend on. Declaring it again here under the same
+// name would cause an enum redefinition error the moment both files are ever
+// included together. See DECISIONS.md, ADR-012.
+enum ENUM_CONFIG_LOG_LEVEL
 {
-   LOG_ERROR = 0,
-   LOG_WARNING,
-   LOG_INFO,
-   LOG_DEBUG,
-   LOG_TRACE
+   CONFIG_LOG_ERROR = 0,
+   CONFIG_LOG_WARNING,
+   CONFIG_LOG_INFO,
+   CONFIG_LOG_DEBUG,
+   CONFIG_LOG_TRACE
 };
 
 enum ENUM_TRADE_DIRECTION
@@ -92,7 +102,7 @@ struct SDashboardConfig
 
 struct SLogConfig
 {
-   ENUM_LOG_LEVEL Level;
+   ENUM_CONFIG_LOG_LEVEL Level;
    bool WriteJournal;
 };
 
@@ -145,7 +155,7 @@ public:
       Dashboard.ShowDashboard    = true;
       Dashboard.ShowStatistics   = true;
 
-      Log.Level                  = LOG_INFO;
+      Log.Level                  = CONFIG_LOG_INFO;
       Log.WriteJournal           = true;
    }
 
