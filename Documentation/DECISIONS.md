@@ -423,6 +423,46 @@ Conversation remains focused on implementation.
 
 ---
 
+# ADR-011
+
+## Title
+
+Documentation Reconciliation & Legacy Module Policy
+
+**Status**
+
+Accepted
+
+**Date**
+
+July 2026
+
+### Context
+
+An export of the actual `AI_SwingBreakout_Pro` project directory was reviewed and found to contain substantially more implemented code than `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, and `CHANGELOG.md` tracked at the time — including a full Error-handling subsystem, a full Logging subsystem, `Config.mqh`, `InputParameters.mqh`, `Version.mqh`, `BaseObject.mqh`, string/time utilities, and a working test framework with one test suite.
+
+These modules were authored outside the documented Sprint workflow (file headers credit different authorship than the current process) and use conventions that diverge from `CODING_STANDARD.md` in several concrete ways: non-standard include guards, non-standard enum naming, at least one absolute include path, and inconsistent version strings.
+
+Separately, the previously-tracked `Include/Core/MathUtils.mqh` was found to have a structural scope bug — its class body closed early, leaving roughly 480 lines of intended methods floating outside the class — confirming the rebuild that ADR-004 and prior Sprint 004 planning anticipated.
+
+### Decision
+
+1. Documentation is reconciled to match the actual repository state whenever the two are found to disagree. The repository is ground truth; documentation is corrected to it, not the reverse.
+2. Newly-discovered legacy modules are recorded in documentation as **"present, pending standards review"** — a distinct status from "Completed." They are not deleted, rewritten wholesale, or silently accepted as compliant.
+3. A full line-by-line correctness/compliance audit of these legacy modules is explicitly deferred to a dedicated future sprint (Sprint 006), rather than performed reactively during reconciliation. Reconciliation's job is to make documentation honest about what exists; it is not a substitute for review.
+4. Known, concretely-observed deviations (include guard style, enum naming, the absolute include in `Error/TestErrorHandler.mqh`) are logged now, even though a full audit has not been performed, so they aren't lost before Sprint 006 begins.
+5. Formulas discovered in the broken legacy `MathUtils.mqh` that are logically sound but architecturally misplaced (e.g. `PositionSize`, `RiskOfRuin`, `ProfitFactor`) are earmarked for salvage into the future Risk module rather than being discarded or re-derived from scratch later.
+
+### Consequences
+
+Documentation temporarily reports lower confidence ("pending review") for a larger share of the codebase than before, even though more code exists. This is intentional — it is more accurate than the previous state, where undocumented code carried an implicit, unverified assumption of correctness.
+
+Progress percentages increase to reflect real repository contents, but are annotated to make clear that the increase reflects discovery, not new work performed in this cycle.
+
+Sprint 006 (Legacy Standards Reconciliation) is added to the roadmap as a prerequisite to treating these modules as equivalent in trust to the modules built under the documented workflow.
+
+---
+
 # Future Decisions
 
 Add new decisions instead of modifying historical ones.

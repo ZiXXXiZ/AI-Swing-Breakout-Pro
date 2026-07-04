@@ -2,7 +2,7 @@
 
 ## ARCHITECTURE
 
-**Version:** 2.0.0-alpha.2
+**Version:** 2.0.0-alpha.3
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -25,7 +25,9 @@ Design goals:
 
 ---
 
-# 2. Project Structure
+# 2. Project Structure (Actual, Reconciled July 2026)
+
+The structure below was verified against an actual export of the repository and replaces the previous, aspirational-only structure.
 
 ```text
 AI_SwingBreakout_Pro/
@@ -35,30 +37,58 @@ AI_SwingBreakout_Pro/
 ├── Include/
 │   │
 │   ├── Core/
+│   │   ├── Base/
+│   │   │   └── BaseObject.mqh
+│   │   ├── Config.mqh
 │   │   ├── Constants.mqh
-│   │   ├── Types.mqh
+│   │   ├── Error/
+│   │   │   ├── ErrorCodes.mqh
+│   │   │   ├── ErrorHandler.mqh
+│   │   │   ├── ErrorInfo.mqh
+│   │   │   └── TestErrorHandler.mqh
+│   │   ├── InputParameters.mqh
+│   │   ├── Logging/
+│   │   │   ├── DefaultLogFormatter.mqh
+│   │   │   ├── Interfaces/
+│   │   │   │   ├── ILogFormatter.mqh
+│   │   │   │   └── ILogOutput.mqh
+│   │   │   ├── JournalLogOutput.mqh
+│   │   │   ├── LogLevel.mqh
+│   │   │   ├── LogRecord.mqh
+│   │   │   └── Logger.mqh
 │   │   ├── MathUtils.mqh
-│   │   ├── Platform.mqh
-│   │   └── Structures/
+│   │   ├── Structures/
+│   │   │   ├── AccountStructures.mqh
+│   │   │   ├── MarketStructures.mqh
+│   │   │   ├── RiskStructures.mqh
+│   │   │   ├── StatisticsStructures.mqh
+│   │   │   └── TradeStructures.mqh
+│   │   ├── Types.mqh
+│   │   ├── Utilities/
+│   │   │   ├── StringUtils.mqh
+│   │   │   └── TimeUtils.mqh
+│   │   └── Version.mqh
 │   │
-│   ├── Indicators/
+│   ├── Indicators/        (planned, not yet started)
+│   ├── Trading/            (planned, not yet started)
+│   ├── Risk/                (planned, not yet started)
+│   ├── AI/                   (planned, not yet started)
+│   ├── UI/                    (planned, not yet started)
 │   │
-│   ├── Trading/
-│   │
-│   ├── Risk/
-│   │
-│   ├── AI/
-│   │
-│   ├── Utilities/
-│   │
-│   └── UI/
+│   └── Tests/
+│       ├── Core/
+│       │   └── Utilities/
+│       │       ├── TestStringUtils.ex5
+│       │       └── TestStringUtils.mq5
+│       └── Framework/
+│           └── TestFramework.mqh
 │
 ├── Source/
-│
 ├── Tests/
-│
 └── Resources/
 ```
+
+Note: `Utilities/` and `Error/` and `Logging/` exist nested inside `Core/`, not as separate top-level Include directories as earlier drafts of this document assumed. This document now reflects that nesting.
 
 ---
 
@@ -95,17 +125,22 @@ The Core module is the foundation of the framework.
 
 Everything else depends on Core.
 
-Current layout:
+Actual current layout:
 
 ```text
 Core
 │
+├── Base            (CBaseObject — minimal base type, no logger/config/trading dependency)
+├── Config           (global configuration enums/validation)
 ├── Constants
-├── Types
-├── Structures
+├── Error             (error codes, structured error info, error handler)
+├── InputParameters
+├── Logging          (Logger, LogLevel, LogRecord, formatters, outputs, interfaces)
 ├── MathUtils
-├── Platform
-└── Logger
+├── Structures
+├── Types
+├── Utilities        (StringUtils, TimeUtils)
+└── Version
 ```
 
 Responsibilities:
@@ -113,10 +148,17 @@ Responsibilities:
 * shared types
 * constants
 * mathematical utilities
-* platform abstraction
+* platform abstraction (planned — `Platform.mqh` not yet built)
 * common data structures
+* error classification and structured error reporting
+* logging (formatting + output targets, via interfaces)
+* string/time utility functions
+* EA input parameter declarations
+* global configuration and versioning metadata
 
 Core must not depend on Trading, AI, Indicators or Risk modules.
+
+**Standards note:** the `Base`, `Config`, `InputParameters`, `Version`, `Error/*`, `Logging/*`, and `Utilities/*` modules listed above were authored outside the documented Sprint workflow and have not yet been reviewed against `CODING_STANDARD.md`. Known deviations (include guard style, enum naming, one absolute include path) are tracked in `PROJECT_CONTEXT.md` under **Known Issues** and `DECISIONS.md` ADR-011. They are structurally present and in-scope for the framework, but "Completed" here means "exists," not "standards-verified."
 
 ---
 
@@ -127,11 +169,11 @@ Current shared structures:
 ```text
 Core/Structures/
 
-TradeStructures
-MarketStructures
-RiskStructures
-AccountStructures
-StatisticsStructures
+TradeStructures.mqh
+MarketStructures.mqh
+RiskStructures.mqh
+AccountStructures.mqh
+StatisticsStructures.mqh
 ```
 
 These files contain only data structures.
@@ -194,6 +236,8 @@ Every include must be relative to the current file.
 
 This allows the entire project to remain portable inside the `Experts/AI_SwingBreakout_Pro` directory.
 
+**Known violation:** `Include/Core/Error/TestErrorHandler.mqh` currently uses `#include <Core/Error/ErrorHandler.mqh>` (a global path). This needs correction — see `PROJECT_CONTEXT.md`, Known Issues.
+
 ---
 
 # 8. Coding Principles
@@ -231,6 +275,8 @@ Rules:
 * Stateless implementation
 * No hidden side effects
 
+`CMathUtils` (rebuilt this cycle) fully complies. `CStringUtils` and `CTimeUtils` follow the same static-class shape but have not yet been reviewed line-by-line for compliance.
+
 ---
 
 # 10. Development Workflow
@@ -265,31 +311,39 @@ Development process:
 5. Commit.
 6. Continue with next module.
 
-Repository documentation must always reflect the current implementation.
+Repository documentation must always reflect the current implementation. When documentation and an actual repository export disagree, the repository wins, and documentation must be corrected — this is what happened in this revision.
 
 ---
 
-# 12. Current Progress
+# 12. Current Progress (Reconciled)
 
-Completed:
+Completed and standards-compliant:
 
 * Constants.mqh
 * Types.mqh
+* MathUtils.mqh (rebuilt this cycle)
 * TradeStructures.mqh
 * MarketStructures.mqh
 * RiskStructures.mqh
 * AccountStructures.mqh
 * StatisticsStructures.mqh
 
-In Progress:
+Present, functional in scope, pending standards review:
 
-* MathUtils.mqh (production rewrite)
+* Base/BaseObject.mqh
+* Config.mqh
+* InputParameters.mqh
+* Version.mqh
+* Error/ (ErrorCodes, ErrorHandler, ErrorInfo, TestErrorHandler)
+* Logging/ (Logger, LogLevel, LogRecord, DefaultLogFormatter, JournalLogOutput, ILogFormatter, ILogOutput)
+* Utilities/ (StringUtils, TimeUtils)
+* Tests/ (TestFramework.mqh, TestStringUtils.mq5/.ex5)
 
 Next:
 
-* Platform.mqh
-* Logger.mqh
-* ValidationUtils.mqh
+* Platform.mqh (not yet started)
+* ValidationUtils.mqh (not yet started)
+* Standards reconciliation pass over the "pending review" modules above
 
 ---
 
@@ -341,3 +395,4 @@ The following rules are mandatory:
 * Generate complete source files for framework modules.
 * Keep documentation synchronized with implementation.
 * Treat GitHub as the authoritative project source.
+* When documentation and the actual repository diverge, reconcile documentation to match the repository — do not assume prior documentation was correct.

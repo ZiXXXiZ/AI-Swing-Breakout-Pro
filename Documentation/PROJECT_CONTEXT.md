@@ -2,7 +2,7 @@
 
 # PROJECT_CONTEXT
 
-**Version:** 2.0.0-alpha.2
+**Version:** 2.0.0-alpha.3
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -87,25 +87,62 @@ Core must never depend on upper layers.
 
 ---
 
-# Folder Layout
+# Folder Layout (Actual, Reconciled July 2026)
+
+A repository audit (upload of the actual `AI_SwingBreakout_Pro` project archive) found substantially more implemented than earlier documentation tracked. This section replaces the previous, outdated layout.
 
 ```
-Documentation/
-
-Include/
-    Core/
-    Indicators/
-    Trading/
-    Risk/
-    AI/
-    Utilities/
-    UI/
-
-Source/
-
-Tests/
-
-Resources/
+AI_SwingBreakout_Pro/
+│
+├── AI_SwingBreakout_Pro.rar        ← Unverified. Appears to be a stale backup
+│                                     archive. Needs manual review/removal.
+│
+├── Documentation/
+│
+├── Include/
+│   ├── Core/
+│   │   ├── Base/
+│   │   │   └── BaseObject.mqh
+│   │   ├── Config.mqh
+│   │   ├── Constants.mqh
+│   │   ├── Error/
+│   │   │   ├── ErrorCodes.mqh
+│   │   │   ├── ErrorHandler.mqh
+│   │   │   ├── ErrorInfo.mqh
+│   │   │   └── TestErrorHandler.mqh   (test script)
+│   │   ├── InputParameters.mqh
+│   │   ├── Logging/
+│   │   │   ├── DefaultLogFormatter.mqh
+│   │   │   ├── Interfaces/
+│   │   │   │   ├── ILogFormatter.mqh
+│   │   │   │   └── ILogOutput.mqh
+│   │   │   ├── JournalLogOutput.mqh
+│   │   │   ├── LogLevel.mqh
+│   │   │   ├── LogRecord.mqh
+│   │   │   └── Logger.mqh
+│   │   ├── MathUtils.mqh
+│   │   ├── Structures/
+│   │   │   ├── AccountStructures.mqh
+│   │   │   ├── MarketStructures.mqh
+│   │   │   ├── RiskStructures.mqh
+│   │   │   ├── StatisticsStructures.mqh
+│   │   │   └── TradeStructures.mqh
+│   │   ├── Types.mqh
+│   │   ├── Utilities/
+│   │   │   ├── StringUtils.mqh
+│   │   │   └── TimeUtils.mqh
+│   │   └── Version.mqh
+│   └── Tests/
+│       ├── Core/
+│       │   └── Utilities/
+│       │       ├── TestStringUtils.ex5
+│       │       └── TestStringUtils.mq5
+│       └── Framework/
+│           └── TestFramework.mqh
+│
+├── Source/
+├── Tests/
+└── Resources/
 ```
 
 ---
@@ -150,6 +187,76 @@ Never use MetaTrader global Include paths.
 
 ---
 
+# Completed Modules (Reconciled)
+
+## Core — Compliant with CODING_STANDARD.md
+
+* `Constants.mqh` — `CConstants`, project-relative includes, `AI_SWINGBREAKOUT_CORE_*` guard.
+* `Types.mqh` — shared enumerations (`E`-prefixed), `AI_SWINGBREAKOUT_CORE_*` guard.
+* `MathUtils.mqh` — rebuilt this cycle. `CMathUtils`, static-only, epsilon comparisons sourced from `CConstants::EPSILON`, no domain (Trading/Risk) logic.
+
+## Core Structures — Compliant
+
+* `TradeStructures.mqh`
+* `MarketStructures.mqh`
+* `RiskStructures.mqh`
+* `AccountStructures.mqh`
+* `StatisticsStructures.mqh`
+
+## Core — Present but NOT Yet Reviewed for Standards Compliance
+
+These modules exist in the repository and are functional in scope, but were authored outside the documented workflow (headers credit "OpenAI & Project Team" / "AI Swing Breakout Team" rather than the current process) and use conventions that diverge from `CODING_STANDARD.md`. See **Known Issues** below.
+
+* `Base/BaseObject.mqh`
+* `Config.mqh`
+* `InputParameters.mqh`
+* `Version.mqh`
+* `Error/ErrorCodes.mqh`
+* `Error/ErrorHandler.mqh`
+* `Error/ErrorInfo.mqh`
+* `Error/TestErrorHandler.mqh`
+* `Logging/Logger.mqh`
+* `Logging/LogLevel.mqh`
+* `Logging/LogRecord.mqh`
+* `Logging/DefaultLogFormatter.mqh`
+* `Logging/JournalLogOutput.mqh`
+* `Logging/Interfaces/ILogFormatter.mqh`
+* `Logging/Interfaces/ILogOutput.mqh`
+* `Utilities/StringUtils.mqh`
+* `Utilities/TimeUtils.mqh`
+
+## Tests — Present, Not Yet Reviewed
+
+* `Tests/Framework/TestFramework.mqh`
+* `Tests/Core/Utilities/TestStringUtils.mq5` (+ compiled `.ex5`)
+
+## Documentation
+
+* REPOSITORY_AUDIT.md
+* ARCHITECTURE.md
+* CODING_STANDARD.md
+* ROADMAP.md
+* CHANGELOG.md
+* DECISIONS.md
+* PROJECT_CONTEXT.md (this file)
+
+---
+
+# Known Issues (Standards Compliance)
+
+Identified while reconciling documentation to the actual repository, without a full line-by-line audit:
+
+* **Include guard style mismatch.** Legacy modules use `__NAME_MQH__` (e.g. `__CONFIG_MQH__`, `__BASEOBJECT_MQH__`) instead of the project convention `AI_SWINGBREAKOUT_CORE_NAME_MQH`.
+* **Enum naming mismatch.** Legacy modules use `ENUM_SIGNAL_TYPE`, `ENUM_ERROR_CATEGORY` style instead of the `E`-prefixed PascalCase convention (`ESignalType`, `EErrorCategory`) defined in `CODING_STANDARD.md`.
+* **Absolute include path violation.** `Error/TestErrorHandler.mqh` uses `#include <Core/Error/ErrorHandler.mqh>` — a global MetaTrader Include path, explicitly prohibited by the Include Policy.
+* **Version inconsistency.** Some legacy files self-report `Version: 1.0.0` or `2.0.0-alpha` (without a patch/stage suffix) rather than the current `2.0.0-alpha.2` / `2.0.0-alpha.3` scheme.
+* **Header format inconsistency.** Several legacy files omit the `Module` and `Author: ZiXXXiZ` header lines required by `CODING_STANDARD.md` Section 4.
+* **Previously undocumented, and therefore never scheduled for review.** These modules were not listed in prior versions of this document, `ARCHITECTURE.md`, `ROADMAP.md`, or `CHANGELOG.md`.
+
+None of these are functional/compile blockers by themselves (aside from the absolute-include violation, which should still compile inside a real MetaTrader install but breaks portability). They are tracked here as technical debt. A full correctness/compliance audit has been deliberately deferred — see `DECISIONS.md`, ADR-011.
+
+---
+
 # Current Development Workflow
 
 Every framework module follows:
@@ -165,31 +272,6 @@ No partial framework implementations should be committed.
 
 ---
 
-# Completed Modules
-
-Core
-
-* Constants.mqh
-* Types.mqh
-
-Core Structures
-
-* TradeStructures.mqh
-* MarketStructures.mqh
-* RiskStructures.mqh
-* AccountStructures.mqh
-* StatisticsStructures.mqh
-
-Documentation
-
-* REPOSITORY_AUDIT.md
-* ARCHITECTURE.md
-* CODING_STANDARD.md
-* ROADMAP.md
-* CHANGELOG.md
-
----
-
 # Current Sprint
 
 Sprint 004
@@ -202,53 +284,16 @@ Rebuild
 Include/Core/MathUtils.mqh
 ```
 
-The previous incremental version introduced structural syntax errors.
-
-Decision:
-
-Rewrite the entire file from scratch.
-
-Do not reuse the previous implementation.
+Status: **Completed this cycle.** The previous incremental version had a structural scope bug — the class body closed after its first section, leaving ~480 lines of intended methods (`NormalizePrice`, `PositionSize`, `RiskOfRuin`, statistics functions, etc.) floating outside the class entirely. It also hardcoded its epsilon value instead of using `CConstants::EPSILON`. It has been fully rewritten as a Core-only, static, epsilon-consistent utility class with no Trading/Risk domain logic (per ADR-003).
 
 ---
 
 # Immediate Next Tasks
 
-1.
-
-Rebuild
-
-```
-Include/Core/MathUtils.mqh
-```
-
-2.
-
-Build
-
-```
-Include/Core/Platform.mqh
-```
-
-3.
-
-Build
-
-```
-Include/Core/Logger.mqh
-```
-
-4.
-
-Build
-
-```
-Include/Core/ValidationUtils.mqh
-```
-
-5.
-
-Continue Risk module.
+1. Decide disposition of legacy Core modules (Base, Config, InputParameters, Version, Error/*, Logging/*, Utilities/*) — bring into compliance, or formally grandfather with a documented exception. See DECISIONS.md ADR-011.
+2. Resolve absolute include path in `Error/TestErrorHandler.mqh`.
+3. Build `Include/Core/Platform.mqh`.
+4. Continue Risk module.
 
 ---
 
@@ -359,7 +404,7 @@ Foundation Layer
 Completion Estimate
 
 ```
-Approximately 20%
+Approximately 35–40% (revised upward after reconciliation with actual repository contents; a meaningful portion of this is unreviewed legacy code, not newly built work)
 ```
 
 Foundation modules are prioritized before higher-level trading logic.
@@ -370,36 +415,18 @@ Foundation modules are prioritized before higher-level trading logic.
 
 Always read these documents before starting work:
 
-1.
-
-PROJECT_CONTEXT.md
-
-2.
-
-ARCHITECTURE.md
-
-3.
-
-CODING_STANDARD.md
-
-4.
-
-DECISIONS.md
-
-5.
-
-ROADMAP.md
-
-6.
-
-CHANGELOG.md
-
+1. PROJECT_CONTEXT.md
+2. ARCHITECTURE.md
+3. CODING_STANDARD.md
+4. DECISIONS.md
+5. ROADMAP.md
+6. CHANGELOG.md
 
 Treat these documents together with the GitHub repository as the complete project context.
 
 Never assume previous chat history is available.
 
-Always continue from the current repository state.
+Always continue from the current repository state — and treat the repository, not prior documentation claims, as ground truth if the two ever disagree. Re-verify documentation against an actual repository export whenever one is available.
 
 ---
 
