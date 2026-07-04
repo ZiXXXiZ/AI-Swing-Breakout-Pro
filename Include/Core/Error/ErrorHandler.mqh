@@ -1,21 +1,62 @@
 ﻿//+------------------------------------------------------------------+
 //| Project : AI Swing Breakout Pro                                  |
 //| File    : ErrorHandler.mqh                                       |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Provides centralized MT5 error lookup services.                |
-//|                                                                  |
-//| Responsibilities                                                 |
-//|   • Translate MT5 error codes                                    |
-//|   • Return structured SErrorInfo                                 |
-//|   • Classify errors                                               |
-//|   • Determine recoverability                                     |
+//| Purpose : Central error manager (no logging dependency)         |
 //+------------------------------------------------------------------+
-#ifndef __ERRORHANDLER_MQH__
-#define __ERRORHANDLER_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_ERRORHANDLER_MQH
+#define AI_SWINGBREAKOUT_CORE_ERRORHANDLER_MQH
 
-#include "../Base/BaseObject.mqh"
-
-#include "ErrorCodes.mqh"
 #include "ErrorInfo.mqh"
+
+class CErrorHandler
+{
+private:
+   SErrorInfo m_lastError;
+   bool       m_hasError;
+
+public:
+
+   CErrorHandler()
+   {
+      Clear();
+   }
+
+   void Clear()
+   {
+      m_lastError.Timestamp = 0;
+      m_lastError.Code      = 0;
+      m_lastError.Severity  = 0;
+      m_lastError.Module    = "";
+      m_lastError.Function  = "";
+      m_lastError.Message   = "";
+      m_hasError = false;
+   }
+
+   void SetError(int code,
+                 int severity,
+                 string module,
+                 string function,
+                 string message)
+   {
+      m_lastError.Timestamp = TimeCurrent();
+      m_lastError.Code      = code;
+      m_lastError.Severity  = severity;
+      m_lastError.Module    = module;
+      m_lastError.Function  = function;
+      m_lastError.Message   = message;
+
+      m_hasError = true;
+   }
+
+   bool HasError() const
+   {
+      return m_hasError;
+   }
+
+   SErrorInfo GetLastError() const
+   {
+      return m_lastError;
+   }
+};
+
+#endif

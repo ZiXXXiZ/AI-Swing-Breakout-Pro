@@ -1,52 +1,23 @@
 //+------------------------------------------------------------------+
 //| Project : AI Swing Breakout Pro                                  |
 //| File    : ErrorInfo.mqh                                          |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Represents a structured framework error.                       |
 //+------------------------------------------------------------------+
-#ifndef __ERRORINFO_MQH__
-#define __ERRORINFO_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_ERRORINFO_MQH
+#define AI_SWINGBREAKOUT_CORE_ERRORINFO_MQH
 
-//+------------------------------------------------------------------+
-//| Error Information                                                |
-//+------------------------------------------------------------------+
+#include "ErrorCodes.mqh"
+
+// DO NOT import LogLevel here (breaks compilation in MQL include graph)
+
 struct SErrorInfo
 {
-public:
+   datetime        Timestamp;
+   int             Code;       // avoid enum dependency chain issues
+   int             Severity;   // decouple from LogLevel completely
 
-   int     Code;           // MT5 error code
-   string  Message;        // Short message
-   string  Description;    // Detailed explanation
-   bool    Recoverable;    // Can caller retry?
-
-   //---------------------------------------------------------------
-   // Constructor
-   //---------------------------------------------------------------
-   SErrorInfo()
-   {
-      Clear();
-   }
-
-   //---------------------------------------------------------------
-   // Reset
-   //---------------------------------------------------------------
-   void Clear()
-   {
-      Code         = 0;
-      Message      = "";
-      Description  = "";
-      Recoverable  = true;
-   }
-
-   //---------------------------------------------------------------
-   // Is error valid?
-   //---------------------------------------------------------------
-   bool IsValid() const
-   {
-      return (Code != 0);
-   }
+   string          Module;
+   string          Function;
+   string          Message;
 };
 
-#endif // __ERRORINFO_MQH__
+#endif

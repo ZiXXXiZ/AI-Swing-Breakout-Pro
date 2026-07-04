@@ -1,48 +1,32 @@
 //+------------------------------------------------------------------+
 //| Project : AI Swing Breakout Pro                                  |
 //| File    : ErrorCodes.mqh                                         |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose:                                                         |
-//|   Common error enumerations used by the framework.               |
+//| Purpose : Centralized framework error definitions                |
 //+------------------------------------------------------------------+
-#ifndef __ERRORCODES_MQH__
-#define __ERRORCODES_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_ERRORCODES_MQH
+#define AI_SWINGBREAKOUT_CORE_ERRORCODES_MQH
 
-//+------------------------------------------------------------------+
-//| Error Category                                                   |
-//+------------------------------------------------------------------+
-enum ENUM_ERROR_CATEGORY
+// PURE standalone enum (NO dependencies allowed here)
+enum ENUM_ERROR_CODE
 {
-   ERROR_CATEGORY_UNKNOWN = 0,
+   ERR_NONE = 0,
 
-   ERROR_CATEGORY_RUNTIME,
+   ERR_INIT_FAILED,
+   ERR_NOT_INITIALIZED,
 
-   ERROR_CATEGORY_TRADE,
+   ERR_INVALID_CONFIG,
+   ERR_CONFIG_NULL,
 
-   ERROR_CATEGORY_MARKET,
+   ERR_NULL_POINTER,
+   ERR_INVALID_STATE,
 
-   ERROR_CATEGORY_NETWORK,
+   ERR_TRADING_DISABLED,
+   ERR_ORDER_FAILED,
 
-   ERROR_CATEGORY_FILE,
+   ERR_TERMINAL_NOT_READY,
+   ERR_ACCOUNT_INVALID,
 
-   ERROR_CATEGORY_CONFIGURATION,
-
-   ERROR_CATEGORY_INDICATOR
+   ERR_UNKNOWN = 99
 };
 
-//+------------------------------------------------------------------+
-//| Error Severity                                                   |
-//+------------------------------------------------------------------+
-enum ENUM_ERROR_SEVERITY
-{
-   ERROR_SEVERITY_INFO = 0,
-
-   ERROR_SEVERITY_WARNING,
-
-   ERROR_SEVERITY_ERROR,
-
-   ERROR_SEVERITY_CRITICAL
-};
-
-#endif // __ERRORCODES_MQH__
+#endif
