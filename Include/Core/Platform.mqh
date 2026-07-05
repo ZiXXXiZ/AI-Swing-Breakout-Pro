@@ -16,41 +16,60 @@
 #include "Types.mqh"
 #include "Version.mqh"
 
+//+------------------------------------------------------------------+
+//| Class CPlatform                                                  |
+//| Description:                                                     |
+//|   Platform abstraction layer. Wraps terminal, account, and       |
+//|   framework identity access, and owns the framework's default    |
+//|   configuration instance.                                        |
+//+------------------------------------------------------------------+
 class CPlatform : public CBaseObject
 {
 private:
-   CConfig *m_config;
+
+   CConfig m_config;
 
 public:
 
+   //---------------------------------------------------------------
+   // Constructor
+   //---------------------------------------------------------------
    CPlatform()
       : CBaseObject("CPlatform")
    {
-      m_config = NULL;
    }
 
-   bool Initialize(CConfig *config)
+   //---------------------------------------------------------------
+   // Initialize
+   //---------------------------------------------------------------
+   virtual bool Initialize()
    {
       if(!CBaseObject::Initialize())
          return false;
 
-      if(config == NULL)
+      m_config.LoadDefaults();
+
+      if(!m_config.Validate())
+      {
+         CBaseObject::Shutdown();
          return false;
+      }
 
-      m_config = config;
-
-      return ValidatePlatform();
+      return true;
    }
 
-   void Shutdown()
+   //---------------------------------------------------------------
+   // Shutdown
+   //---------------------------------------------------------------
+   virtual void Shutdown()
    {
-      m_config = NULL;
       CBaseObject::Shutdown();
    }
 
    //==============================================================
-   // Terminal Info
+   // Terminal
    //==============================================================
+
    string TerminalName() const
    {
       return TerminalInfoString(TERMINAL_NAME);
@@ -67,8 +86,9 @@ public:
    }
 
    //==============================================================
-   // Account Info
+   // Account
    //==============================================================
+
    double Balance() const
    {
       return AccountInfoDouble(ACCOUNT_BALANCE);
@@ -95,8 +115,9 @@ public:
    }
 
    //==============================================================
-   // Framework Identity
+   // Framework
    //==============================================================
+
    string ProjectName() const
    {
       return PROJECT_NAME;
@@ -113,22 +134,28 @@ public:
    }
 
    //==============================================================
-   // Config Access
+   // Configuration
    //==============================================================
-   const CConfig* Config() const
+
+   bool ValidateConfig()
    {
-      return m_config;
+      return m_config.Validate();
    }
 
-private:
-
-   bool ValidatePlatform()
+   // Read-only access for other modules (Risk/Trading/AI) that need
+   // to consult framework configuration. MQL5 does not support
+   // reference return types (Type&) at all, so this returns a
+   // pointer via GetPointer() rather than a reference — the pointer
+   // is safe because it targets a member CPlatform already owns, not
+   // an externally-injected object of unclear lifetime. Intentionally
+   // const — see DECISIONS.md if/when Phase 8 (Adaptive Parameters)
+   // needs controlled runtime mutation; that should be added as
+   // narrow, explicit setters later, not by widening this to
+   // non-const.
+   const CConfig *Config() const
    {
-      if(m_config == NULL)
-         return false;
-
-      return m_config.Validate();
+      return GetPointer(m_config);
    }
 };
 
-#endif
+#endif // AI_SWINGBREAKOUT_CORE_PLATFORM_MQH
