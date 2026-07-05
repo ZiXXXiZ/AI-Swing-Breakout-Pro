@@ -71,6 +71,12 @@ AI_SwingBreakout_Pro/
 │   │   │   └── TimeUtils.mqh
 │   │   └── Version.mqh
 │   │
+│   ├── Framework/
+│   │   ├── Context.mqh
+│   │   ├── Module.mqh
+│   │   ├── ModuleManager.mqh
+│   │   └── Engine.mqh
+│   │
 │   └── Tests/
 │       ├── Core/
 │       │   └── Utilities/
@@ -353,16 +359,21 @@ Completed and standards-compliant:
 * Constants.mqh
 * Types.mqh
 * MathUtils.mqh (rebuilt this cycle)
+* Config.mqh (finalized this cycle — header completed, log-level enum renamed to resolve collision with `Logging/LogLevel.mqh`, `VolumeMAPeriod` validation added; considered closed, no further changes planned)
+* Platform.mqh (built this cycle — header completed, `Config()` accessor returns `const CConfig*` via `GetPointer()` since MQL5 does not support reference return types)
 * TradeStructures.mqh
 * MarketStructures.mqh
 * RiskStructures.mqh
 * AccountStructures.mqh
 * StatisticsStructures.mqh
 
+Framework layer — new this cycle, compiled clean:
+
+* Context.mqh, Module.mqh, ModuleManager.mqh, Engine.mqh — `CModule`/`CContext` design per ADR-013. `CContext` injection standardized at the `CModule` base after an Initialize() signature-hiding defect was found and fixed (see CHANGELOG.md). Not yet integrated with a main EA composition root — `AI_SwingBreakout_Pro.mq5` doesn't yet construct or wire a `CContext`/`CModuleManager`.
+
 Present, functional in scope, pending standards review:
 
 * Base/BaseObject.mqh
-* Config.mqh
 * InputParameters.mqh
 * Version.mqh
 * Error/ (ErrorCodes, ErrorHandler, ErrorInfo, TestErrorHandler)
@@ -372,8 +383,8 @@ Present, functional in scope, pending standards review:
 
 Next:
 
-* Platform.mqh (not yet started)
 * ValidationUtils.mqh (not yet started)
+* Wire Framework layer into `AI_SwingBreakout_Pro.mq5` (construct `CContext`, populate it, build a `CModuleManager`)
 * Standards reconciliation pass over the "pending review" modules above
 
 ---

@@ -506,6 +506,42 @@ Separately, `Core/Error/ErrorInfo.mqh` currently includes `../Logging/LogLevel.m
 
 ---
 
+# ADR-013
+
+## Title
+
+Framework Layer: CContext / CModule / CModuleManager / CEngine
+
+**Status**
+
+Accepted
+
+**Date**
+
+July 2026
+
+### Context
+
+A new top-level layer, `Include/Framework/`, was introduced: `CContext` (a non-owning bundle of `CPlatform`/`CLogger`/`CErrorHandler`), `CModule` (base class for framework modules), `CModuleManager` (registers modules and drives their lifecycle), and `CEngine` (the first concrete module). This layer was not previously planned in `ROADMAP.md` or `ARCHITECTURE.md` — it was designed and built directly, then reviewed.
+
+Initial review found a serious defect: `CModule::Initialize()` took no parameters, but `CEngine::Initialize(CContext*)` took one. Different parameter lists mean the derived method doesn't override the base — it hides it as a separate overload. This compiled with zero errors. `CModuleManager::Initialize()` calling `m_modules[i].Initialize()` on a `CModule*` would silently dispatch to the inherited no-arg base version even when the underlying object was a `CEngine`, leaving `m_context` permanently `NULL` with no error at any point. See `CHANGELOG.md` for the full technical description.
+
+### Decision
+
+1. `CContext` injection is standardized at the `CModule` base, not left to each derived module to reimplement. Every future Trading/Risk/AI module inherits `Initialize(CContext*)`, `Shutdown()`, and `Context()` from `CModule` rather than redeclaring them, which is what caused the original defect.
+2. `CModule::Initialize(CContext*)` validates via `CContext::IsValid()` (checking Platform/Logger/ErrorHandler are all non-null), not just a bare null check on `context` itself.
+3. `CContext`'s `Platform()`/`Logger()`/`ErrorHandler()` getters are `const`, so `CModule::Context()` can return `const CContext*` — derived modules can use every service reachable through the context, but cannot rewire the context itself (no calling `SetPlatform`/`SetLogger`/`SetErrorHandler` through a const pointer).
+4. `CModuleManager` does not own registered modules — it does not delete them in `Shutdown()` or a destructor. The caller that creates a module remains responsible for its lifetime. This mirrors `CContext`'s existing non-owning design rather than introducing a second, inconsistent ownership model within the same layer.
+5. Going forward, any class hierarchy in this project with a virtual method meant to be overridden must be reviewed for exact signature match before being considered done — a mismatched override is not caught by compilation and will not produce a warning.
+
+### Consequences
+
+- Future Trading/Risk/AI modules get context access "for free" by inheriting from `CModule`, rather than each needing to duplicate `m_context` storage and validation the way `CEngine` originally did.
+- `CModuleManager` growing a destructor that deletes modules later, if that's ever wanted, is a deliberate design change requiring a new ADR — not an oversight to silently fix.
+- `ARCHITECTURE.md` and `ROADMAP.md` require updates to reflect this layer's existence (folder structure, dependency diagram, sprint history) — tracked as part of this same documentation pass rather than deferred, unlike some earlier legacy-module findings, because this layer was built this cycle rather than discovered as pre-existing.
+
+---
+
 # Future Decisions
 
 Add new decisions instead of modifying historical ones.

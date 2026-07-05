@@ -156,20 +156,49 @@ Explicitly deferred:
 
 ### Sprint 005 — Platform Services
 
-Status: Planned
+Status: 🚧 In Progress — Platform.mqh done, ValidationUtils.mqh pending
 
 Deliverables:
 
 ```text
-Include/Core/Platform.mqh
-Include/Core/ValidationUtils.mqh
+Include/Core/Platform.mqh          ✅ done, compiled clean
+Include/Core/ValidationUtils.mqh   pending — next task
 ```
+
+Platform.mqh notes: built with value-owned `CConfig m_config` (not a raw injected pointer — safer, no dangling-pointer risk), a `Config()` accessor returning `const CConfig*` via `GetPointer()` (MQL5 has no reference return types), and a full header. Compiled clean.
 
 Note: `Include/Core/Logging/Logger.mqh` already exists (pending standards review), so a new `Logger.mqh` is no longer a Sprint 005 deliverable — it has been replaced with a review/reconciliation task for the existing file instead.
 
 Goal:
 
 Create the platform abstraction layer used by all higher-level modules, and bring the existing Logging subsystem into documented, standards-verified status.
+
+---
+
+### Sprint 005b — Framework Layer (NEW, not originally planned)
+
+Status: ✅ Completed this cycle
+
+Trigger:
+
+Built directly (outside the documented sprint-by-sprint workflow) as `Include/Framework/Context.mqh`, `Module.mqh`, `ModuleManager.mqh`, `Engine.mqh` — a new top-level layer for module composition and lifecycle management, sitting above Core.
+
+What was found:
+
+`CModule::Initialize()` took no parameters; `CEngine::Initialize(CContext*)` took one. Different signatures meant `CEngine` never actually overrode the base — it hid it. This compiled with zero errors and zero warnings, and would have silently left `CEngine.m_context` as `NULL` forever whenever driven through `CModuleManager`'s polymorphic dispatch. See CHANGELOG.md for the full explanation.
+
+What was done:
+
+`CContext` handling moved into the `CModule` base itself (`Initialize(CContext*)`, `m_context`, `Context()`), so every future Trading/Risk/AI module inherits consistent context injection rather than each reimplementing it. `CModuleManager` gained `SetContext()` and now passes context through to every registered module. `CModuleManager` explicitly does not own registered modules (no deletion in `Shutdown()` or a destructor) — documented, not just assumed. See DECISIONS.md, ADR-013.
+
+Deliverables:
+
+* Context.mqh, Module.mqh, ModuleManager.mqh, Engine.mqh — done, compiled clean together
+* ARCHITECTURE.md, ROADMAP.md, CHANGELOG.md, DECISIONS.md — reconciled to include this layer
+
+Explicitly deferred:
+
+* Wiring the Framework layer into `AI_SwingBreakout_Pro.mq5` (constructing an actual `CContext`, populating it with a real `CPlatform`/`CLogger`/`CErrorHandler`, building a `CModuleManager`) — no composition root exists yet.
 
 ---
 
@@ -185,7 +214,6 @@ Candidates:
 
 ```text
 Base/BaseObject.mqh
-Config.mqh
 InputParameters.mqh
 Version.mqh
 Error/ (4 files)
@@ -193,6 +221,8 @@ Logging/ (7 files)
 Utilities/StringUtils.mqh
 Utilities/TimeUtils.mqh
 ```
+
+Note: `Config.mqh` has been removed from this candidate list — it was finalized directly (header, include guard, enum collision, and validation completeness all addressed) and is considered closed, not pending review.
 
 Known concrete issues to resolve:
 
@@ -423,27 +453,27 @@ Release Criteria:
 Current Sprint:
 
 ```text
-Sprint 005
+Sprint 005 (Platform.mqh done; ValidationUtils.mqh pending)
 ```
 
 Current Task:
 
 ```text
-Build Include/Core/Platform.mqh
+Build Include/Core/ValidationUtils.mqh
 ```
 
 Next Tasks:
 
-1. Build `Include/Core/Platform.mqh`
-2. Build `Include/Core/ValidationUtils.mqh`
+1. Build `Include/Core/ValidationUtils.mqh`
+2. Wire Framework layer (Context/Module/ModuleManager/Engine) into `AI_SwingBreakout_Pro.mq5`
 3. Begin Sprint 006 (Legacy Standards Reconciliation) — includes decoupling `ErrorInfo.mqh` from `LogLevel.mqh` per ADR-012
 4. Resolve absolute include in `Error/TestErrorHandler.mqh`
 5. Begin Infrastructure Layer standards review
 6. Build Risk Engine foundation (salvage formulas from legacy MathUtils.mqh)
 
-Resolved this cycle: main EA file location confirmed at project root (`AI_SwingBreakout_Pro.mq5`) with its include-path convention documented (ADR-012).
+Resolved this cycle: `Platform.mqh` built and compiled clean; `Config.mqh` finalized (closed, not pending review); Framework layer (Context/Module/ModuleManager/Engine) built, critical Initialize() signature-hiding bug found and fixed, compiled clean together — see ADR-013.
 
-Note: when reviewing legacy modules in Sprint 006, specifically check for the same static-member-as-default-parameter pattern that caused MathUtils.mqh's compile errors — any legacy file using `SomeClass::CONST` as a default argument will fail the same way.
+Note: when reviewing legacy modules in Sprint 006, specifically check for the same static-member-as-default-parameter pattern that caused MathUtils.mqh's compile errors — any legacy file using `SomeClass::CONST` as a default argument will fail the same way. Also check any class hierarchy for virtual method signature mismatches like the one found in Engine.mqh — these compile clean and fail silently, so they won't show up in a "0 errors, 0 warnings" build.
 
 ---
 

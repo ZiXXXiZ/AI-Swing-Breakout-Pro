@@ -89,6 +89,24 @@ Fixed by renaming the enumerator to `ERR_TRADING_DISABLED` in `ENUM_ERROR_CODE`.
 
 Note: this was a single naming collision, not an include-order or include-chain problem — the include graph between `ErrorHandler.mqh` → `ErrorInfo.mqh` → `ErrorCodes.mqh`/`LogLevel.mqh` was not changed and was not the cause.
 
+## Platform.mqh — Reference Return Type Not Supported
+
+Compile failed with `'&' - reference cannot be used` at line 150. Root cause: MQL5 does not support reference return types (`Type&`) at all, for any type — only reference *parameters* are supported. `const CConfig &Config() const` was invalid regardless of `CConfig` being a class vs. struct.
+
+Fixed by returning a pointer via MQL5's `GetPointer()` built-in instead: `const CConfig *Config() const { return GetPointer(m_config); }`. Safe because the pointer targets a member `CPlatform` already owns (value-semantics `m_config`), not an externally-injected object of unclear lifetime. Re-verified: **0 errors, 0 warnings**.
+
+## Config.mqh — Incomplete Indicator Validation
+
+`Validate()` checked `FastEMA`/`SlowEMA`/`ATRPeriod`/`ADXPeriod` but not `Indicator.VolumeMAPeriod`, inconsistent with its sibling fields. Added `if(Indicator.VolumeMAPeriod < 1) return false;`. Config.mqh is now considered final — no further changes planned against it.
+
+## Framework Layer — Initialize() Signature Hiding (CEngine)
+
+`Module.mqh` declared `virtual bool Initialize()` (no parameters); `Engine.mqh` declared `virtual bool Initialize(CContext *context)`. Different parameter lists mean the derived method does not override the base — it hides it, as a separate overload. This compiled with **zero errors**, because both declarations were individually valid — the bug was purely in the polymorphic dispatch, not the syntax. `CModuleManager::Initialize()` calls `m_modules[i].Initialize()` (no arguments) on a `CModule*`. Even when that pointer held a `CEngine` at runtime, virtual dispatch resolved to the inherited no-arg `CModule::Initialize()`, never `CEngine::Initialize(CContext*)` — `m_context` would have stayed `NULL` indefinitely, silently, with no error or warning at any point.
+
+Fixed architecturally rather than by just matching signatures: `CContext` handling (the `m_context` member, `Initialize(CContext*)`, and a `Context()` accessor) moved into `CModule` itself, so every future Trading/Risk/AI module gets consistent context injection automatically, not just `CEngine`. `CModule::Initialize()` also gained a `context.IsValid()` check (using `CContext::IsValid()`, which already existed), stronger than `CEngine`'s previous bare null check. `CEngine` now correctly overrides the base (matching signature) and no longer duplicates `m_context`/`Context()`. `CModuleManager` gained `SetContext()`/`m_context` and now passes context through to every registered module. `Context.mqh`'s `Platform()`/`Logger()`/`ErrorHandler()` getters were marked `const` to support `CModule::Context()` safely returning `const CContext*`. All four files re-verified together: **0 errors, 0 warnings**.
+
+This is a different bug category from the three above — those were all caught by the compiler eventually. This one would not have been. Worth remembering when reviewing any future class hierarchy in this project: matching virtual method signatures exactly is not optional, and MQL5 will not warn about an accidental overload where an override was intended.
+
 ---
 
 # Discovered (Repository Reconciliation)
