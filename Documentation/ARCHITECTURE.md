@@ -2,7 +2,7 @@
 
 ## ARCHITECTURE
 
-**Version:** 2.0.0-alpha.3
+**Version:** 2.0.0-alpha.4
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -352,40 +352,45 @@ Repository documentation must always reflect the current implementation. When do
 
 ---
 
-# 12. Current Progress (Reconciled)
+# 12. Current Progress (Reconciled — July 2026, alpha.4)
 
-Completed and standards-compliant:
+## Core — Fully Standards-Compliant
 
-* Constants.mqh
-* Types.mqh
-* MathUtils.mqh (rebuilt this cycle)
-* Config.mqh (finalized this cycle — header completed, log-level enum renamed to resolve collision with `Logging/LogLevel.mqh`, `VolumeMAPeriod` validation added; considered closed, no further changes planned)
-* Platform.mqh (built this cycle — header completed, `Config()` accessor returns `const CConfig*` via `GetPointer()` since MQL5 does not support reference return types)
-* TradeStructures.mqh
-* MarketStructures.mqh
-* RiskStructures.mqh
-* AccountStructures.mqh
-* StatisticsStructures.mqh
+* `Constants.mqh`, `Types.mqh`
+* `MathUtils.mqh` — rebuilt, compile-verified
+* `Config.mqh` — finalized and closed
+* `Platform.mqh` — built, compile-verified
+* `ValidationUtils.mqh` — built, compile pending
+* `TradeStructures.mqh`, `MarketStructures.mqh`, `RiskStructures.mqh`, `AccountStructures.mqh`, `StatisticsStructures.mqh`
 
-Framework layer — new this cycle, compiled clean:
+## Core — Sprint 006 Complete (all 16 files standards-compliant)
 
-* Context.mqh, Module.mqh, ModuleManager.mqh, Engine.mqh — `CModule`/`CContext` design per ADR-013. `CContext` injection standardized at the `CModule` base after an Initialize() signature-hiding defect was found and fixed (see CHANGELOG.md). Not yet integrated with a main EA composition root — `AI_SwingBreakout_Pro.mq5` doesn't yet construct or wire a `CContext`/`CModuleManager`.
+* `Base/BaseObject.mqh`, `InputParameters.mqh`, `Version.mqh`
+* `Error/ErrorCodes.mqh`, `Error/ErrorHandler.mqh`
+* `Error/ErrorInfo.mqh` — Error/Logging decoupled (own `ENUM_ERROR_SEVERITY`)
+* `Error/TestErrorHandler.mqh` — rewritten to current API, include path fixed
+* `Logging/LogLevel.mqh`, `Logging/LogRecord.mqh` — 6 fields added
+* `Logging/Logger.mqh` — `Initialize()` renamed to `Configure()` (signature-hiding fix)
+* `Logging/DefaultLogFormatter.mqh`, `Logging/JournalLogOutput.mqh`
+* `Logging/Interfaces/ILogFormatter.mqh`, `Logging/Interfaces/ILogOutput.mqh`
+* `Utilities/StringUtils.mqh`
+* `Utilities/TimeUtils.mqh` — duplicate content removed
 
-Present, functional in scope, pending standards review:
+## Framework Layer — Complete, Compiled Clean
 
-* Base/BaseObject.mqh
-* InputParameters.mqh
-* Version.mqh
-* Error/ (ErrorCodes, ErrorHandler, ErrorInfo, TestErrorHandler)
-* Logging/ (Logger, LogLevel, LogRecord, DefaultLogFormatter, JournalLogOutput, ILogFormatter, ILogOutput)
-* Utilities/ (StringUtils, TimeUtils)
-* Tests/ (TestFramework.mqh, TestStringUtils.mq5/.ex5)
+* `Framework/Context.mqh`, `Framework/Module.mqh`, `Framework/ModuleManager.mqh`, `Framework/Engine.mqh`
+* `CContext` injection standardized at `CModule` base — see ADR-013
 
-Next:
+## Not Yet Started
 
-* ValidationUtils.mqh (not yet started)
-* Wire Framework layer into `AI_SwingBreakout_Pro.mq5` (construct `CContext`, populate it, build a `CModuleManager`)
-* Standards reconciliation pass over the "pending review" modules above
+* `AI_SwingBreakout_Pro.mq5` — composition root (Sprint 007)
+* `Include/Risk/` — Risk Engine (Sprint 007)
+* `Include/Indicators/`, `Include/Trading/`, `Include/AI/`, `Include/UI/` — future phases
+
+## Tests
+
+* `Tests/Framework/TestFramework.mqh` — present, not yet reviewed
+* `Tests/Core/Utilities/TestStringUtils.mq5` — present, not yet reviewed
 
 ---
 

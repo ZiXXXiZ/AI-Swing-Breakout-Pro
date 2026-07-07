@@ -18,7 +18,7 @@ Example:
 
 ---
 
-# Version 2.0.0-alpha.3
+# Version 2.0.0-alpha.4
 
 **Status**
 
@@ -32,7 +32,7 @@ July 2026
 
 # Summary
 
-This release rebuilds `MathUtils.mqh`, fixes a compile error in the Core Error subsystem (`ErrorCodes.mqh`), and reconciles all project documentation against the actual contents of the repository, after an export of the real project directory revealed significantly more implemented code than previous documentation tracked.
+This release completes Sprint 005 (Platform.mqh, ValidationUtils.mqh), delivers the Framework layer (Context/Module/ModuleManager/Engine), and executes Sprint 006 — a full standards-compliance pass across all 16 legacy Core modules. Three silent or latent bugs were found and fixed during Sprint 006 that would not have appeared as compile errors.
 
 ---
 
@@ -40,25 +40,25 @@ This release rebuilds `MathUtils.mqh`, fixes a compile error in the Core Error s
 
 ## Core
 
-Rebuilt
-
 ```text
-MathUtils.mqh
+Platform.mqh
+ValidationUtils.mqh
 ```
 
-Complete rewrite. Static-only `CMathUtils`, epsilon comparisons sourced from `CConstants::EPSILON`/consumer-supplied values, no Trading/Risk domain logic mixed in (per ADR-003). Includes floating-point comparison, range/clamp utilities, safe arithmetic, percentage helpers, angle conversion, and array-based statistics (mean, variance, standard deviation, median).
+**Platform.mqh** — value-owned `CConfig m_config` (not a raw injected pointer), `Config()` accessor returns `const CConfig*` via `GetPointer()` (MQL5 does not support reference return types), full header, compile-verified.
 
----
+**ValidationUtils.mqh** — stateless `CValidationUtils`, static-only. Covers pointer safety (template `IsValidPointer`), string/number/handle/ticket/array validation, and broker-data validation (`IsValidSymbol`, `IsValidVolume` using `SymbolInfo` + `CMathUtils::RoundToStep` for step-alignment). Depends only on `Constants.mqh` and `MathUtils.mqh`. Compile pending.
 
-## Documentation
+## Framework Layer
 
-Reconciled to match an actual repository export:
+```text
+Include/Framework/Context.mqh
+Include/Framework/Module.mqh
+Include/Framework/ModuleManager.mqh
+Include/Framework/Engine.mqh
+```
 
-* PROJECT_CONTEXT.md
-* ARCHITECTURE.md
-* ROADMAP.md
-* CHANGELOG.md (this file)
-* DECISIONS.md (new ADR-011)
+New top-level layer for module composition and lifecycle management. See ADR-013 and the Framework Layer bug fix below.
 
 ---
 
@@ -66,105 +66,88 @@ Reconciled to match an actual repository export:
 
 ## MathUtils.mqh — Structural Scope Bug
 
-The previous implementation was not simply incomplete — its `class CMathUtils { ... }` body closed after the first section (`Basic Math`), leaving approximately 480 subsequent lines (price math, statistics, trading/risk formulas, safe-math helpers) declared as `static` methods **outside any class**. Any call site using `CMathUtils::NormalizePrice(...)` or similar would have failed to compile. The file also hardcoded its epsilon value (`1e-9`) instead of referencing `CConstants::EPSILON`, decoupling it from the rest of Core.
+The previous implementation's `class CMathUtils { ... }` body closed after the first section, leaving approximately 480 lines of intended methods floating outside the class entirely. The file also hardcoded epsilon instead of referencing `CConstants::EPSILON`. Complete rewrite. Compile-verified: **0 errors, 0 warnings**.
 
-## MathUtils.mqh — Compile Errors on First Build ("constant expected")
+## MathUtils.mqh — "constant expected" (8 errors on first build)
 
-The rebuilt file's first compile attempt produced 8 "constant expected" errors, all on methods using `epsilon = CConstants::EPSILON` as a default parameter value. Root cause: MQL5 does not accept a static class member as a default parameter value, even when that member is declared `const`. Only true compile-time literals are accepted in that position.
-
-Resolved by splitting each affected method into a two-overload pair:
-
-```cpp
-static bool IsEqual(const double a, const double b);
-static bool IsEqual(const double a, const double b, const double epsilon);
-```
-
-The no-epsilon overload calls the explicit-epsilon overload, passing `CConstants::EPSILON` as an ordinary argument (legal at any call site — the restriction is specific to default-parameter *declarations*). Applied to `IsEqual`, `IsZero`, `IsGreater`, `IsLess`, `IsGreaterOrEqual`, `IsLessOrEqual`, `IsBetween`, and `Sign`. Caller-facing behavior is unchanged. Re-verified in MetaEditor: **0 errors, 0 warnings**.
+MQL5 does not accept static class members as default parameter values, even when `const`. Fixed by splitting each affected method into a two-overload pair (bare version calls the epsilon-explicit version internally). Re-verified: **0 errors, 0 warnings**.
 
 ## ErrorCodes.mqh — Identifier Collision with Built-in Constant
 
-Compile failed with `'ERR_TRADE_DISABLED' - identifier expected` at `ErrorCodes.mqh` line 23. Root cause: `ERR_TRADE_DISABLED` is a predefined MQL4/5-compatibility trade-server error constant built into the compiler. Declaring an enumerator with that exact name caused the compiler to substitute the built-in's numeric value at that position instead of accepting it as a new identifier, breaking the enum declaration.
-
-Fixed by renaming the enumerator to `ERR_TRADING_DISABLED` in `ENUM_ERROR_CODE`. No other file (`ErrorHandler.mqh`, `ErrorInfo.mqh`, `LogLevel.mqh`) referenced the old identifier, so no other changes were required. Re-verified: **0 errors, 0 warnings**.
-
-Note: this was a single naming collision, not an include-order or include-chain problem — the include graph between `ErrorHandler.mqh` → `ErrorInfo.mqh` → `ErrorCodes.mqh`/`LogLevel.mqh` was not changed and was not the cause.
+`ERR_TRADE_DISABLED` is a predefined MQL4/5-compat constant — redeclaring it as an enumerator caused "identifier expected". Renamed to `ERR_TRADING_DISABLED`. Re-verified: **0 errors, 0 warnings**.
 
 ## Platform.mqh — Reference Return Type Not Supported
 
-Compile failed with `'&' - reference cannot be used` at line 150. Root cause: MQL5 does not support reference return types (`Type&`) at all, for any type — only reference *parameters* are supported. `const CConfig &Config() const` was invalid regardless of `CConfig` being a class vs. struct.
-
-Fixed by returning a pointer via MQL5's `GetPointer()` built-in instead: `const CConfig *Config() const { return GetPointer(m_config); }`. Safe because the pointer targets a member `CPlatform` already owns (value-semantics `m_config`), not an externally-injected object of unclear lifetime. Re-verified: **0 errors, 0 warnings**.
+MQL5 has no reference return types (`Type&`) at all. `const CConfig &Config() const` failed to compile. Fixed with `const CConfig *Config() const { return GetPointer(m_config); }`. Re-verified: **0 errors, 0 warnings**.
 
 ## Config.mqh — Incomplete Indicator Validation
 
-`Validate()` checked `FastEMA`/`SlowEMA`/`ATRPeriod`/`ADXPeriod` but not `Indicator.VolumeMAPeriod`, inconsistent with its sibling fields. Added `if(Indicator.VolumeMAPeriod < 1) return false;`. Config.mqh is now considered final — no further changes planned against it.
+`Validate()` checked all `Indicator` fields except `VolumeMAPeriod`. Added `if(Indicator.VolumeMAPeriod < 1) return false;`. Config.mqh is now finalized — no further changes planned.
 
 ## Framework Layer — Initialize() Signature Hiding (CEngine)
 
-`Module.mqh` declared `virtual bool Initialize()` (no parameters); `Engine.mqh` declared `virtual bool Initialize(CContext *context)`. Different parameter lists mean the derived method does not override the base — it hides it, as a separate overload. This compiled with **zero errors**, because both declarations were individually valid — the bug was purely in the polymorphic dispatch, not the syntax. `CModuleManager::Initialize()` calls `m_modules[i].Initialize()` (no arguments) on a `CModule*`. Even when that pointer held a `CEngine` at runtime, virtual dispatch resolved to the inherited no-arg `CModule::Initialize()`, never `CEngine::Initialize(CContext*)` — `m_context` would have stayed `NULL` indefinitely, silently, with no error or warning at any point.
+`CModule::Initialize()` took no parameters; `CEngine::Initialize(CContext*)` took one. Different parameter lists mean the derived method hides rather than overrides the base — MQL5 compiles this with **zero errors, zero warnings**, but `CModuleManager`'s polymorphic `m_modules[i].Initialize()` call would have dispatched to the inherited no-arg base version forever, leaving `m_context` permanently `NULL` silently.
 
-Fixed architecturally rather than by just matching signatures: `CContext` handling (the `m_context` member, `Initialize(CContext*)`, and a `Context()` accessor) moved into `CModule` itself, so every future Trading/Risk/AI module gets consistent context injection automatically, not just `CEngine`. `CModule::Initialize()` also gained a `context.IsValid()` check (using `CContext::IsValid()`, which already existed), stronger than `CEngine`'s previous bare null check. `CEngine` now correctly overrides the base (matching signature) and no longer duplicates `m_context`/`Context()`. `CModuleManager` gained `SetContext()`/`m_context` and now passes context through to every registered module. `Context.mqh`'s `Platform()`/`Logger()`/`ErrorHandler()` getters were marked `const` to support `CModule::Context()` safely returning `const CContext*`. All four files re-verified together: **0 errors, 0 warnings**.
+Fixed architecturally: `CContext` injection moved into `CModule` itself (`m_context`, `Initialize(CContext*)`, `Context()`), so every future Trading/Risk/AI module gets it automatically. `CModule::Initialize()` now validates via `CContext::IsValid()` (checks all three services, not just a null check on context itself). `CEngine` inherits correctly. `CModuleManager` gained `SetContext()` and passes context through. `Context.mqh` getters marked `const`. Re-verified together: **0 errors, 0 warnings**.
 
-This is a different bug category from the three above — those were all caught by the compiler eventually. This one would not have been. Worth remembering when reviewing any future class hierarchy in this project: matching virtual method signatures exactly is not optional, and MQL5 will not warn about an accidental overload where an override was intended.
+**This is the most dangerous bug category found this cycle — it compiled clean and would have failed silently at runtime.** Virtual method signature matching must be reviewed on every class hierarchy going forward. MQL5 will not warn about an accidental overload where an override was intended.
 
----
+## Sprint 006 — Three Latent Bugs Found During Standards Pass
 
-# Discovered (Repository Reconciliation)
+### Bug 1: TimeUtils.mqh — Entire content duplicated inside one file
 
-An export of the actual project directory was reviewed this cycle. It contained the following modules, none of which were tracked in any previous version of `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, or this file:
+The file contained the full implementation pasted twice, back to back, with two nested `#ifndef` blocks sharing only one `#endif`. The outer guard never closed. First copy was also incomplete (missing `Minute`/`Second`/`StartOfDay`/`EndOfDay`/`FormatDate`/`FormatTime`/`FormatDateTime` bodies despite declaring them). Fixed: duplicate removed, single clean copy kept (the complete second paste).
+
+### Bug 2: Logger.mqh — Initialize() signature hiding (same category as CEngine)
+
+`CLogger::Initialize(ILogFormatter*, ILogOutput*)` didn't match `CBaseObject::Initialize()` (no args) — same silent-hiding defect as `CEngine`. Fixed by renaming to `Configure(ILogFormatter*, ILogOutput*)`. No call sites existed yet (no main EA wiring), so zero breakage risk.
+
+### Bug 3: DefaultLogFormatter.mqh — referenced 6 fields not present in SLogRecord
+
+`DefaultLogFormatter.mqh` read `record.Function`, `.Line`, `.Symbol`, `.Timeframe`, `.Ticket`, `.ErrorCode` — none of which existed in `LogRecord.mqh` at the time (only `Timestamp`/`Level`/`Module`/`Message`). Would not have compiled. Fixed by adding all 6 fields to `SLogRecord` rather than gutting the richer formatter — a trading log genuinely benefits from symbol/ticket/error-code context.
+
+## Sprint 006 — Standards Compliance Pass (16 files)
+
+All 16 legacy Core modules brought into compliance. Applied uniformly across all files:
+
+* Include guards: `__NAME_MQH__` → `AI_SWINGBREAKOUT_CORE_NAME_MQH`
+* Headers: added missing `Module`, `Author: ZiXXXiZ`, `Purpose`, `Version: 2.0.0-alpha.3` lines
+* Version strings: unified to `2.0.0-alpha.3`
+
+Additional per-file fixes:
+
+* `ErrorInfo.mqh` — `SErrorInfo.Severity` changed from `ENUM_LOG_LEVEL` (borrowed from Logging) to `ENUM_ERROR_SEVERITY` (own type, defined in `ErrorCodes.mqh`). This implements the Error/Logging decoupling required by ADR-012, which was previously listed as "not yet implemented." `ErrorInfo.mqh` no longer includes `../Logging/LogLevel.mqh`.
+* `TestErrorHandler.mqh` — fully rewritten. Previous version tested a `GetErrorInfo()`/`Category`/`Recoverable` API that no longer existed on `CErrorHandler`. Rewritten to test the actual current API: `SetError()`/`HasError()`/`GetLastError()`/`Clear()`. Absolute include path (`#include <Core/Error/ErrorHandler.mqh>`) replaced with relative path (`#include "ErrorHandler.mqh"`).
+* `Config.mqh` — already finalized in a prior pass; not re-touched here.
+
+Files processed:
 
 ```text
 Include/Core/Base/BaseObject.mqh
-Include/Core/Config.mqh
 Include/Core/InputParameters.mqh
 Include/Core/Version.mqh
 Include/Core/Error/ErrorCodes.mqh
 Include/Core/Error/ErrorHandler.mqh
 Include/Core/Error/ErrorInfo.mqh
 Include/Core/Error/TestErrorHandler.mqh
-Include/Core/Logging/Logger.mqh
 Include/Core/Logging/LogLevel.mqh
 Include/Core/Logging/LogRecord.mqh
+Include/Core/Logging/Logger.mqh
 Include/Core/Logging/DefaultLogFormatter.mqh
 Include/Core/Logging/JournalLogOutput.mqh
 Include/Core/Logging/Interfaces/ILogFormatter.mqh
 Include/Core/Logging/Interfaces/ILogOutput.mqh
 Include/Core/Utilities/StringUtils.mqh
 Include/Core/Utilities/TimeUtils.mqh
-Include/Tests/Framework/TestFramework.mqh
-Include/Tests/Core/Utilities/TestStringUtils.mq5 (+ compiled .ex5)
 ```
-
-These modules are functional in scope (error handling, logging subsystem, string/time utilities, EA input parameters, configuration, versioning, and a working test framework with one test suite) but were authored outside the documented Sprint workflow — file headers credit "OpenAI & Project Team" / "AI Swing Breakout Team" rather than the current process — and have not been reviewed for `CODING_STANDARD.md` compliance.
-
----
-
-# Known Issues
-
-## Newly Identified (Standards Compliance)
-
-* Legacy modules use `__NAME_MQH__` include guards instead of the project's `AI_SWINGBREAKOUT_CORE_NAME_MQH` convention.
-* Legacy modules use `ENUM_X`-style enum naming instead of the `EX` PascalCase convention.
-* `Error/TestErrorHandler.mqh` uses an absolute/global include path (`#include <Core/Error/ErrorHandler.mqh>`), violating the Include Policy.
-* Version strings are inconsistent across legacy files (`1.0.0`, `2.0.0-alpha`, `2.0.0-alpha.2`).
-* Several legacy file headers omit the `Module` and `Author: ZiXXXiZ` lines required by `CODING_STANDARD.md`.
-
-A full correctness/compliance audit of these modules was deliberately deferred this cycle — see DECISIONS.md, ADR-011 — in favor of first bringing documentation in line with reality.
-
-## Open Architecture Question (Not Yet Decided)
-
-`ErrorInfo.mqh` currently includes `../Logging/LogLevel.mqh` and uses `ENUM_LOG_LEVEL` for its `Severity` field — i.e. `Core/Error` currently depends on `Core/Logging`. Whether this should be disallowed (giving Error its own severity type instead of borrowing Logging's) is an open question, not yet decided or implemented. If adopted, it would need to happen as an actual refactor with its own ADR, not just a documentation note — see Sprint 006 candidates in `ROADMAP.md`.
-
-## Carried Forward
-
-* None. `MathUtils.mqh` has been compile-verified in MetaEditor (0 errors, 0 warnings) — see **Fixed**, below.
 
 ---
 
 # Engineering Decisions Introduced
 
-* ADR-011: Documentation Reconciliation & Legacy Module Policy — see `DECISIONS.md`.
-* ADR-012: Root EA Include Convention & Core Subsystem Isolation (Error/Logging) — see `DECISIONS.md`. Confirms `AI_SwingBreakout_Pro.mq5` lives at the project root and documents its include-path convention; adopts a one-way dependency flow and Error/Logging mutual isolation as target design for Core, explicitly marked not-yet-implemented where the codebase doesn't match it yet (`ErrorInfo.mqh` → `LogLevel.mqh`); rejects an earlier proposed "no `../` includes" rule as incompatible with how MQL5 actually resolves relative paths.
+* ADR-011: Documentation Reconciliation & Legacy Module Policy
+* ADR-012: Root EA Include Convention & Core Subsystem Isolation (Error/Logging)
+* ADR-013: Framework Layer — CContext/CModule/CModuleManager/CEngine design
 
 ---
 
@@ -173,39 +156,25 @@ A full correctness/compliance audit of these modules was deliberately deferred t
 Current Phase
 
 ```text
-Foundation Layer
+Foundation Layer → transitioning to Risk Engine
 ```
 
-Overall Progress (revised)
+Overall Progress
 
 ```text
-Approximately 30% (up from a previously-reported 20%, reflecting reconciliation with actual repository contents — not equivalent new work performed this cycle)
+Approximately 55%
 ```
 
 Current Sprint
 
 ```text
-Sprint 005 — Platform Services
-```
-
-Current Task
-
-```text
-Build Include/Core/Platform.mqh
+Sprint 007 — Wire Framework + Begin Risk Engine
 ```
 
 ---
 
-# Next Milestone
+# Previous: Version 2.0.0-alpha.3
 
-Version
+**Date:** July 2026
 
-```text
-2.0.0-alpha.4
-```
-
-Expected deliverables:
-
-* Platform.mqh
-* ValidationUtils.mqh
-* Sprint 006 kickoff: legacy module standards reconciliation
+**Summary:** Repository reconciliation — documentation brought in line with actual repo contents. `MathUtils.mqh` rebuilt. `Config.mqh` finalized. Framework layer scaffolded. All bugs listed above under Fixed were discovered and resolved across alpha.3 and alpha.4 development cycles.

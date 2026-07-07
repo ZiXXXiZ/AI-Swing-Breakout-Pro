@@ -2,7 +2,7 @@
 
 # ROADMAP
 
-**Version:** 2.0.0-alpha.3
+**Version:** 2.0.0-alpha.4
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -22,240 +22,100 @@ Build a production-quality, modular MQL5 trading framework capable of supporting
 * Optimization
 * Future Machine Learning Integration
 
-The framework should be reusable, extensible, maintainable, and production-ready.
-
 ---
 
 # Development Principles
 
-Every milestone must satisfy the following requirements:
-
-* Production-quality implementation
-* Compiles successfully
-* Documentation updated
-* GitHub committed
+* Production-quality implementation only
+* Compiles successfully before proceeding
+* Documentation updated with every sprint
 * No placeholder implementations
 * No duplicated logic
-
-Development proceeds module-by-module rather than feature-by-feature.
+* Interface/contract reviewed before implementation for architecturally central pieces
 
 ---
 
-# Overall Progress (Reconciled July 2026)
-
-A repository export reviewed this cycle showed materially more implemented than previous roadmap versions tracked. Progress bars below have been revised. Note that a meaningful share of "Foundation Layer" progress is **existing, unreviewed code** discovered during reconciliation, not newly built work — see Known Issues in `PROJECT_CONTEXT.md`.
+# Overall Progress
 
 ```text
-Foundation Layer          ██████▌░░░  65%
-Infrastructure Layer      ░░░░░░░░░░   0%
-Trading Layer             ░░░░░░░░░░   0%
-Risk Layer                ░░░░░░░░░░   0%
-AI Layer                  ░░░░░░░░░░   0%
-Testing & Optimization    ░░░░░░░░░░   0%
+Foundation Layer          ██████████  100%
+Framework Layer           ████████░░   80%  (wiring into main EA pending)
+Infrastructure Layer      ██░░░░░░░░   20%  (Error/Logging/String/Time done via Sprint 006)
+Risk Layer                ░░░░░░░░░░    0%
+Trading Layer             ░░░░░░░░░░    0%
+AI Layer                  ░░░░░░░░░░    0%
+Testing & Optimization    ░░░░░░░░░░    0%
 
-Overall Project Progress  ███▎░░░░░░  32%
+Overall Project Progress  █████░░░░░   55%
 ```
 
 ---
 
 # Phase 1 — Foundation
 
-## Goal
+## Sprint 001 — Project Foundation
+Status: ✅ Completed
 
-Build a stable and reusable framework foundation.
+## Sprint 002 — Core Definitions
+Status: ✅ Completed
+Deliverables: `Constants.mqh`, `Types.mqh`
 
-### Sprint 001 — Project Foundation
+## Sprint 003 — Core Structures
+Status: ✅ Completed
+Deliverables: `TradeStructures.mqh`, `MarketStructures.mqh`, `RiskStructures.mqh`, `AccountStructures.mqh`, `StatisticsStructures.mqh`
 
+## Sprint 004 — Core Utilities (MathUtils)
+Status: ✅ Completed
+Deliverables: `MathUtils.mqh` — full rebuild. Structural scope bug fixed, epsilon default-parameter MQL5 limitation worked around via overload pairs. Compile-verified: 0 errors, 0 warnings.
+
+## Sprint 004b — Repository Reconciliation
+Status: ✅ Completed
+Trigger: Repository export revealed substantially more implemented code than documentation tracked. All docs reconciled to actual repo state.
+
+## Sprint 005 — Platform Services
 Status: ✅ Completed
 
 Deliverables:
 
-* Repository initialization
-* Documentation structure
-* Folder structure
-* Repository audit
+* `Platform.mqh` — value-owned config, `GetPointer()` fix for MQL5 reference-return limitation, compile-verified
+* `ValidationUtils.mqh` — built, compile pending confirmation
 
----
-
-### Sprint 002 — Core Definitions
-
+## Sprint 005b — Framework Layer
 Status: ✅ Completed
 
-Deliverables:
+Deliverables: `Context.mqh`, `Module.mqh`, `ModuleManager.mqh`, `Engine.mqh`
 
-* Constants.mqh
-* Types.mqh
+Critical bug found and fixed: `CEngine::Initialize(CContext*)` silently hid `CModule::Initialize()` instead of overriding it — compiled with 0 errors, would have left `m_context` NULL forever at runtime. Fixed architecturally by moving `CContext` injection into `CModule` itself. See ADR-013 and CHANGELOG.md.
 
----
-
-### Sprint 003 — Core Structures
-
+## Sprint 006 — Legacy Standards Reconciliation
 Status: ✅ Completed
 
-Deliverables:
+All 16 legacy Core modules brought into full `CODING_STANDARD.md` compliance.
 
-* TradeStructures.mqh
-* MarketStructures.mqh
-* RiskStructures.mqh
-* AccountStructures.mqh
-* StatisticsStructures.mqh
+Three latent bugs found and fixed (none were compile errors):
 
----
+1. **TimeUtils.mqh** — entire file content was duplicated, outer `#ifndef` guard never closed.
+2. **Logger.mqh** — `CLogger::Initialize(ILogFormatter*, ILogOutput*)` hid `CBaseObject::Initialize()` instead of overriding it (same category as CEngine bug). Renamed to `Configure()`.
+3. **DefaultLogFormatter.mqh** — referenced 6 fields on `SLogRecord` that didn't exist. Fixed by adding the fields to `SLogRecord` (`Function`/`Line`/`Symbol`/`Timeframe`/`Ticket`/`ErrorCode`).
 
-### Sprint 004 — Core Utilities (MathUtils)
+Additional notable fixes:
 
-Status: ✅ Completed this cycle
-
-Objective:
-
-Rebuild:
-
-```text
-Include/Core/MathUtils.mqh
-```
-
-What was found:
-
-The previous file had a structural scope bug, not just "compile errors": its class body closed after the first section (`Basic Math`), and roughly 480 subsequent lines of intended methods — price math, statistics, trading/risk math, safe-math helpers — were left floating outside the class entirely. It also hardcoded its epsilon value instead of sourcing it from `CConstants::EPSILON`.
-
-What was done:
-
-Rewrote the file completely as a Core-only, static, epsilon-consistent utility class (`CMathUtils`). Deliberately excluded Trading/Risk-domain formulas (`PositionSize`, `RiskOfRuin`, `ProfitFactor`, `WinRate`, `DrawdownPercent`, etc.) that existed in the broken version — those belong in the future Risk module per ADR-003, not in Core.
-
-Deliverables:
-
-* MathUtils.mqh — done
-* Compile verification — **done** (MetaEditor: 0 errors, 0 warnings)
-* Documentation update — done (this cycle)
-
-Note: initial compile attempt surfaced 8 "constant expected" errors. Root cause was an MQL5 limitation, not a logic error: static class members (`CConstants::EPSILON`) are not accepted as default parameter values, even though `EPSILON` is `const`. Fixed by splitting each affected method (`IsEqual`, `IsZero`, `IsGreater`, `IsLess`, `IsGreaterOrEqual`, `IsLessOrEqual`, `IsBetween`, `Sign`) into a two-overload pair — one explicit-epsilon version, one convenience version that calls it with `CConstants::EPSILON` passed as a normal argument. Re-verified: 0 errors, 0 warnings.
+* `ErrorInfo.mqh` — decoupled from Logging subsystem. `SErrorInfo.Severity` now uses `ENUM_ERROR_SEVERITY` (owned by Error) instead of `ENUM_LOG_LEVEL` (borrowed from Logging). Implements ADR-012 target design.
+* `TestErrorHandler.mqh` — rewritten to test actual current API. Absolute include path fixed.
 
 ---
 
-### Sprint 004b — Repository Reconciliation (NEW)
+# Phase 2 — Framework Wiring (Sprint 007)
 
-Status: ✅ Completed this cycle
+Status: 🚧 In Progress
 
-Trigger:
+## Sprint 007 — Composition Root + Risk Engine Start
 
-An export of the actual project directory was reviewed and found to contain substantially more than prior documentation tracked, including a full Error-handling subsystem, a full Logging subsystem, `Config.mqh`, `InputParameters.mqh`, `Version.mqh`, `BaseObject.mqh`, `StringUtils.mqh`, `TimeUtils.mqh`, and a `Tests/` directory with a working test framework and one test suite — none previously documented.
+Objectives:
 
-Deliverables:
-
-* PROJECT_CONTEXT.md — reconciled to actual repository contents
-* ARCHITECTURE.md — reconciled folder structure and module inventory
-* ROADMAP.md — this file, progress bars and sprint history corrected
-* CHANGELOG.md — new entry documenting the reconciliation
-* DECISIONS.md — ADR-011 recording the reconciliation decision and legacy-module policy
-
-Explicitly deferred:
-
-* Full line-by-line compliance audit of the newly-documented legacy modules (deferred by decision, not oversight — see ADR-011)
-
----
-
-### Sprint 005 — Platform Services
-
-Status: 🚧 In Progress — Platform.mqh done, ValidationUtils.mqh pending
-
-Deliverables:
-
-```text
-Include/Core/Platform.mqh          ✅ done, compiled clean
-Include/Core/ValidationUtils.mqh   pending — next task
-```
-
-Platform.mqh notes: built with value-owned `CConfig m_config` (not a raw injected pointer — safer, no dangling-pointer risk), a `Config()` accessor returning `const CConfig*` via `GetPointer()` (MQL5 has no reference return types), and a full header. Compiled clean.
-
-Note: `Include/Core/Logging/Logger.mqh` already exists (pending standards review), so a new `Logger.mqh` is no longer a Sprint 005 deliverable — it has been replaced with a review/reconciliation task for the existing file instead.
-
-Goal:
-
-Create the platform abstraction layer used by all higher-level modules, and bring the existing Logging subsystem into documented, standards-verified status.
-
----
-
-### Sprint 005b — Framework Layer (NEW, not originally planned)
-
-Status: ✅ Completed this cycle
-
-Trigger:
-
-Built directly (outside the documented sprint-by-sprint workflow) as `Include/Framework/Context.mqh`, `Module.mqh`, `ModuleManager.mqh`, `Engine.mqh` — a new top-level layer for module composition and lifecycle management, sitting above Core.
-
-What was found:
-
-`CModule::Initialize()` took no parameters; `CEngine::Initialize(CContext*)` took one. Different signatures meant `CEngine` never actually overrode the base — it hid it. This compiled with zero errors and zero warnings, and would have silently left `CEngine.m_context` as `NULL` forever whenever driven through `CModuleManager`'s polymorphic dispatch. See CHANGELOG.md for the full explanation.
-
-What was done:
-
-`CContext` handling moved into the `CModule` base itself (`Initialize(CContext*)`, `m_context`, `Context()`), so every future Trading/Risk/AI module inherits consistent context injection rather than each reimplementing it. `CModuleManager` gained `SetContext()` and now passes context through to every registered module. `CModuleManager` explicitly does not own registered modules (no deletion in `Shutdown()` or a destructor) — documented, not just assumed. See DECISIONS.md, ADR-013.
-
-Deliverables:
-
-* Context.mqh, Module.mqh, ModuleManager.mqh, Engine.mqh — done, compiled clean together
-* ARCHITECTURE.md, ROADMAP.md, CHANGELOG.md, DECISIONS.md — reconciled to include this layer
-
-Explicitly deferred:
-
-* Wiring the Framework layer into `AI_SwingBreakout_Pro.mq5` (constructing an actual `CContext`, populating it with a real `CPlatform`/`CLogger`/`CErrorHandler`, building a `CModuleManager`) — no composition root exists yet.
-
----
-
-### Sprint 006 — Legacy Standards Reconciliation
-
-Status: Planned (new)
-
-Goal:
-
-Bring the "present but not yet reviewed" Core modules into compliance with `CODING_STANDARD.md`, or formally document an exception per module.
-
-Candidates:
-
-```text
-Base/BaseObject.mqh
-InputParameters.mqh
-Version.mqh
-Error/ (4 files)
-Logging/ (7 files)
-Utilities/StringUtils.mqh
-Utilities/TimeUtils.mqh
-```
-
-Note: `Config.mqh` has been removed from this candidate list — it was finalized directly (header, include guard, enum collision, and validation completeness all addressed) and is considered closed, not pending review.
-
-Known concrete issues to resolve:
-
-* Include guard style (`__NAME_MQH__` → `AI_SWINGBREAKOUT_CORE_NAME_MQH`)
-* Enum naming (`ENUM_X` → `EX`)
-* Absolute include in `Error/TestErrorHandler.mqh`
-* Header format consistency (Module/Author lines)
-* Version string consistency
-* Decouple `ErrorInfo.mqh` from `LogLevel.mqh` — give `SErrorInfo.Severity` its own type instead of borrowing `ENUM_LOG_LEVEL` (per ADR-012, target design: Error and Logging must not depend on each other)
-
----
-
-# Phase 2 — Infrastructure
-
-Status: Partially started (unreviewed)
-
-Modules:
-
-```text
-Configuration        — Config.mqh exists, pending review
-File System           — not started
-Logging                — Logger.mqh + subsystem exists, pending review
-Serialization          — not started
-Time Utilities          — TimeUtils.mqh exists, pending review
-Symbol Utilities         — not started
-Session Utilities         — not started
-Error Handling             — ErrorHandler.mqh + subsystem exists, pending review
-Event System                — not started
-```
-
-Deliverable:
-
-Complete and standards-verify infrastructure services.
+1. Confirm `ValidationUtils.mqh` compiles (carry-forward from Sprint 005).
+2. Write `AI_SwingBreakout_Pro.mq5` — the composition root. Construct `CPlatform`, `CLogger` (via `Configure()`), `CErrorHandler`, wire all three into a `CContext`, build a `CModuleManager`, and drive `OnInit()`/`OnTick()`/`OnDeinit()` through the module system. This is the first end-to-end integration test — every module built so far gets exercised together for the first time.
+3. Begin `Include/Risk/` — position sizing, risk calculator. Salvage the formulas that were in the old broken `MathUtils.mqh` (`PositionSize`, `RiskOfRuin`, `ProfitFactor`, `Expectancy`, `DrawdownPercent`, `RecoveryFactor`) — these were architecturally misplaced in Core, but the math itself is sound and should be reused here.
 
 ---
 
@@ -263,20 +123,7 @@ Complete and standards-verify infrastructure services.
 
 Status: Planned
 
-Modules:
-
-```text
-Price Engine
-Candle Engine
-Market Snapshot
-Tick Processing
-Multi-Timeframe Cache
-History Loader
-```
-
-Deliverable:
-
-Reliable market data abstraction.
+Modules: Price Engine, Candle Engine, Market Snapshot, Tick Processing, Multi-Timeframe Cache, History Loader
 
 ---
 
@@ -284,35 +131,19 @@ Reliable market data abstraction.
 
 Status: Planned
 
-Modules:
-
-```text
-Moving Average
-ATR
-ADX
-RSI
-MACD
-Bollinger Bands
-Volume Analysis
-Trend Detection
-Custom Indicators
-```
-
-Deliverable:
-
-Reusable indicator framework.
+Modules: Moving Average, ATR, ADX, RSI, MACD, Bollinger Bands, Volume Analysis, Trend Detection, Custom Indicators
 
 ---
 
 # Phase 5 — Risk Engine
 
-Status: Planned
+Status: Starting (Sprint 007)
 
 Modules:
 
 ```text
-Position Sizing
-Risk Calculator
+Position Sizing       ← salvage from old MathUtils.mqh
+Risk Calculator       ← salvage from old MathUtils.mqh
 Exposure Control
 Daily Loss Limit
 Drawdown Protection
@@ -320,32 +151,13 @@ Correlation Filter
 Trade Validation
 ```
 
-Note: the broken legacy `MathUtils.mqh` contained several formulas belonging here (`PositionSize`, `RiskOfRuin`, `ProfitFactor`, `Expectancy`, `BreakEvenWinRate`, `RecoveryFactor`, `WinRate`, `DrawdownPercent`). These are logically sound as formulas but were misplaced in Core. They should be salvaged into this module rather than re-derived from scratch, once this phase begins.
-
-Deliverable:
-
-Production-grade risk management.
-
 ---
 
 # Phase 6 — Trading Engine
 
 Status: Planned
 
-Modules:
-
-```text
-Trade Manager
-Order Manager
-Position Manager
-Execution Engine
-Trade Filters
-Order Lifecycle
-```
-
-Deliverable:
-
-Reliable trade execution framework.
+Modules: Trade Manager, Order Manager, Position Manager, Execution Engine, Trade Filters, Order Lifecycle
 
 ---
 
@@ -353,20 +165,7 @@ Reliable trade execution framework.
 
 Status: Planned
 
-Modules:
-
-```text
-Swing Breakout
-Trend Following
-Scalping
-Reversal
-Range Trading
-Strategy Interface
-```
-
-Deliverable:
-
-Plug-in strategy architecture.
+Modules: Swing Breakout, Trend Following, Scalping, Reversal, Range Trading, Strategy Interface
 
 ---
 
@@ -374,39 +173,24 @@ Plug-in strategy architecture.
 
 Status: Planned
 
-Modules:
+Modules: Feature Extraction, Market Classification, Signal Scoring, Trade Confidence, Risk Prediction, Adaptive Parameters
 
-```text
-Feature Extraction
-Market Classification
-Signal Scoring
-Trade Confidence
-Risk Prediction
-Adaptive Parameters
-```
-
-Deliverable:
-
-AI-assisted decision engine.
+Note: `CPlatform::Config()` returns `const CConfig*` intentionally. When Phase 8 begins, runtime parameter adaptation should be implemented as narrow, explicit setters — not by widening this to non-const. See DECISIONS.md, ADR-012.
 
 ---
 
 # Phase 9 — Testing
 
-Status: Partially started (unreviewed)
+Status: Partially started
 
 Modules:
 
 ```text
-Unit Tests            — TestFramework.mqh + one test suite (StringUtils) exist
-Integration Tests      — not started
-Stress Tests             — not started
-Regression Tests          — not started
+Unit Tests      — TestFramework.mqh + TestStringUtils.mq5 exist
+Integration     — pending (first real integration test is AI_SwingBreakout_Pro.mq5, Sprint 007)
+Stress Tests    — planned
+Regression      — planned
 ```
-
-Deliverable:
-
-Verified framework stability.
 
 ---
 
@@ -414,28 +198,13 @@ Verified framework stability.
 
 Status: Planned
 
-Modules:
-
-```text
-Parameter Optimization
-Walk Forward Testing
-Performance Analysis
-Monte Carlo Simulation
-```
-
-Deliverable:
-
-Optimized trading system.
+Modules: Parameter Optimization, Walk Forward Testing, Performance Analysis, Monte Carlo Simulation
 
 ---
 
 # Phase 11 — Production Release
 
-Target Version:
-
-```text
-Version 2.0.0
-```
+Target Version: `2.0.0`
 
 Release Criteria:
 
@@ -450,30 +219,18 @@ Release Criteria:
 
 # Current Priority
 
-Current Sprint:
+Current Sprint: **Sprint 007**
 
-```text
-Sprint 005 (Platform.mqh done; ValidationUtils.mqh pending)
-```
+Current Tasks (in order):
 
-Current Task:
+1. Confirm `ValidationUtils.mqh` compile result
+2. Write `AI_SwingBreakout_Pro.mq5` (composition root / integration test)
+3. Begin `Include/Risk/` — interface proposal first per agreed workflow
 
-```text
-Build Include/Core/ValidationUtils.mqh
-```
+Known MQL5 gotchas to check in every new file going forward:
 
-Next Tasks:
-
-1. Build `Include/Core/ValidationUtils.mqh`
-2. Wire Framework layer (Context/Module/ModuleManager/Engine) into `AI_SwingBreakout_Pro.mq5`
-3. Begin Sprint 006 (Legacy Standards Reconciliation) — includes decoupling `ErrorInfo.mqh` from `LogLevel.mqh` per ADR-012
-4. Resolve absolute include in `Error/TestErrorHandler.mqh`
-5. Begin Infrastructure Layer standards review
-6. Build Risk Engine foundation (salvage formulas from legacy MathUtils.mqh)
-
-Resolved this cycle: `Platform.mqh` built and compiled clean; `Config.mqh` finalized (closed, not pending review); Framework layer (Context/Module/ModuleManager/Engine) built, critical Initialize() signature-hiding bug found and fixed, compiled clean together — see ADR-013.
-
-Note: when reviewing legacy modules in Sprint 006, specifically check for the same static-member-as-default-parameter pattern that caused MathUtils.mqh's compile errors — any legacy file using `SomeClass::CONST` as a default argument will fail the same way. Also check any class hierarchy for virtual method signature mismatches like the one found in Engine.mqh — these compile clean and fail silently, so they won't show up in a "0 errors, 0 warnings" build.
+* No static class members as default parameter values → use overload pairs
+* Virtual method signature must match exactly → different parameter list hides instead of overrides, compiles clean, fails silently
 
 ---
 
@@ -481,11 +238,9 @@ Note: when reviewing legacy modules in Sprint 006, specifically check for the sa
 
 A sprint is complete only when:
 
-* Source code is production quality.
-* The project compiles successfully.
-* Documentation is synchronized.
-* Architecture remains consistent.
-* Changes are committed to GitHub.
-* The repository is in a stable state.
-
-Only then should development continue to the next sprint.
+* Source code is production quality
+* Project compiles successfully
+* Documentation is synchronized
+* Architecture remains consistent
+* Changes are committed to GitHub
+* Repository is in a stable state

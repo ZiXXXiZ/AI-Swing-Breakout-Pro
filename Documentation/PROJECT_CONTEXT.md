@@ -2,7 +2,7 @@
 
 # PROJECT_CONTEXT
 
-**Version:** 2.0.0-alpha.3
+**Version:** 2.0.0-alpha.4
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -74,7 +74,7 @@ Risk Engine
         │
 Indicators
         │
-Utilities
+Framework (Context / Module / ModuleManager / Engine)
         │
 Core
         │
@@ -87,9 +87,7 @@ Core must never depend on upper layers.
 
 ---
 
-# Folder Layout (Actual, Reconciled July 2026)
-
-A repository audit (upload of the actual `AI_SwingBreakout_Pro` project archive) found substantially more implemented than earlier documentation tracked. This section replaces the previous, outdated layout.
+# Folder Layout (Confirmed, July 2026)
 
 ```
 AI_SwingBreakout_Pro/
@@ -108,7 +106,7 @@ AI_SwingBreakout_Pro/
 │   │   │   ├── ErrorCodes.mqh
 │   │   │   ├── ErrorHandler.mqh
 │   │   │   ├── ErrorInfo.mqh
-│   │   │   └── TestErrorHandler.mqh   (test script)
+│   │   │   └── TestErrorHandler.mqh
 │   │   ├── InputParameters.mqh
 │   │   ├── Logging/
 │   │   │   ├── DefaultLogFormatter.mqh
@@ -131,11 +129,15 @@ AI_SwingBreakout_Pro/
 │   │   │   ├── StringUtils.mqh
 │   │   │   └── TimeUtils.mqh
 │   │   └── Version.mqh
+│   ├── Framework/
+│   │   ├── Context.mqh
+│   │   ├── Module.mqh
+│   │   ├── ModuleManager.mqh
+│   │   └── Engine.mqh
 │   └── Tests/
-│       ├── Core/
-│       │   └── Utilities/
-│       │       ├── TestStringUtils.ex5
-│       │       └── TestStringUtils.mq5
+│       ├── Core/Utilities/
+│       │   ├── TestStringUtils.ex5
+│       │   └── TestStringUtils.mq5
 │       └── Framework/
 │           └── TestFramework.mqh
 │
@@ -146,33 +148,12 @@ AI_SwingBreakout_Pro/
 
 ---
 
-# Current Coding Rules
-
-Mandatory rules:
-
-* Production-quality source only.
-* Complete source files.
-* Never build framework modules from partial snippets.
-* One responsibility per file.
-* Relative include paths only.
-* No placeholder code.
-* No duplicated logic.
-* Keep Core independent.
-* Documentation must remain synchronized with implementation.
-
----
-
 # Include Policy
 
 Correct
 
 ```cpp
 #include "../Types.mqh"
-```
-
-Correct
-
-```cpp
 #include "Constants.mqh"
 ```
 
@@ -188,80 +169,66 @@ Never use MetaTrader global Include paths.
 
 ```cpp
 #include "Include/Core/Types.mqh"
+#include "Include/Framework/Context.mqh"
 ```
 
-Files inside `Include/Core/...` are unaffected — see `ARCHITECTURE.md` Section 7 and `DECISIONS.md` ADR-012.
+Files inside `Include/` are unaffected — see ADR-012.
 
 ---
 
-# Completed Modules (Reconciled)
+# Completed Modules
 
-## Core — Compliant with CODING_STANDARD.md
+## Core — Standards-Compliant
 
-* `Constants.mqh` — `CConstants`, project-relative includes, `AI_SWINGBREAKOUT_CORE_*` guard.
-* `Types.mqh` — shared enumerations (`E`-prefixed), `AI_SWINGBREAKOUT_CORE_*` guard.
-* `MathUtils.mqh` — rebuilt this cycle. `CMathUtils`, static-only, epsilon comparisons sourced from `CConstants::EPSILON`, no domain (Trading/Risk) logic.
-
-## Core Structures — Compliant
-
+* `Constants.mqh`
+* `Types.mqh`
+* `MathUtils.mqh` — rebuilt, compile-verified
+* `Config.mqh` — finalized, closed
+* `Platform.mqh` — built, compile-verified
+* `ValidationUtils.mqh` — built (compile pending)
 * `TradeStructures.mqh`
 * `MarketStructures.mqh`
 * `RiskStructures.mqh`
 * `AccountStructures.mqh`
 * `StatisticsStructures.mqh`
 
-## Core — Present but NOT Yet Reviewed for Standards Compliance
+## Core — Sprint 006 Standards Pass Complete
 
-These modules exist in the repository and are functional in scope, but were authored outside the documented workflow (headers credit "OpenAI & Project Team" / "AI Swing Breakout Team" rather than the current process) and use conventions that diverge from `CODING_STANDARD.md`. See **Known Issues** below.
+All 16 files below were brought into full compliance this cycle. No longer "pending review."
 
 * `Base/BaseObject.mqh`
-* `Config.mqh`
 * `InputParameters.mqh`
 * `Version.mqh`
 * `Error/ErrorCodes.mqh`
 * `Error/ErrorHandler.mqh`
-* `Error/ErrorInfo.mqh`
-* `Error/TestErrorHandler.mqh`
-* `Logging/Logger.mqh`
+* `Error/ErrorInfo.mqh` — decoupled from Logging (now uses own `ENUM_ERROR_SEVERITY`)
+* `Error/TestErrorHandler.mqh` — rewritten to test current API, absolute include fixed
 * `Logging/LogLevel.mqh`
-* `Logging/LogRecord.mqh`
+* `Logging/LogRecord.mqh` — 6 fields added (`Function`/`Line`/`Symbol`/`Timeframe`/`Ticket`/`ErrorCode`)
+* `Logging/Logger.mqh` — `Initialize()` renamed to `Configure()` (signature-hiding fix)
 * `Logging/DefaultLogFormatter.mqh`
 * `Logging/JournalLogOutput.mqh`
 * `Logging/Interfaces/ILogFormatter.mqh`
 * `Logging/Interfaces/ILogOutput.mqh`
 * `Utilities/StringUtils.mqh`
-* `Utilities/TimeUtils.mqh`
+* `Utilities/TimeUtils.mqh` — duplicate content removed (file was pasted twice, outer `#ifndef` never closed)
 
-## Tests — Present, Not Yet Reviewed
+## Framework Layer — New This Cycle
 
-* `Tests/Framework/TestFramework.mqh`
-* `Tests/Core/Utilities/TestStringUtils.mq5` (+ compiled `.ex5`)
+* `Framework/Context.mqh`
+* `Framework/Module.mqh`
+* `Framework/ModuleManager.mqh`
+* `Framework/Engine.mqh`
 
-## Documentation
-
-* REPOSITORY_AUDIT.md
-* ARCHITECTURE.md
-* CODING_STANDARD.md
-* ROADMAP.md
-* CHANGELOG.md
-* DECISIONS.md
-* PROJECT_CONTEXT.md (this file)
+All compile-verified together. `CContext` injection standardized at `CModule` base — see ADR-013.
 
 ---
 
-# Known Issues (Standards Compliance)
+# Known Issues
 
-Identified while reconciling documentation to the actual repository, without a full line-by-line audit:
-
-* **Include guard style mismatch.** Legacy modules use `__NAME_MQH__` (e.g. `__CONFIG_MQH__`, `__BASEOBJECT_MQH__`) instead of the project convention `AI_SWINGBREAKOUT_CORE_NAME_MQH`.
-* **Enum naming mismatch.** Legacy modules use `ENUM_SIGNAL_TYPE`, `ENUM_ERROR_CATEGORY` style instead of the `E`-prefixed PascalCase convention (`ESignalType`, `EErrorCategory`) defined in `CODING_STANDARD.md`.
-* **Absolute include path violation.** `Error/TestErrorHandler.mqh` uses `#include <Core/Error/ErrorHandler.mqh>` — a global MetaTrader Include path, explicitly prohibited by the Include Policy.
-* **Version inconsistency.** Some legacy files self-report `Version: 1.0.0` or `2.0.0-alpha` (without a patch/stage suffix) rather than the current `2.0.0-alpha.2` / `2.0.0-alpha.3` scheme.
-* **Header format inconsistency.** Several legacy files omit the `Module` and `Author: ZiXXXiZ` header lines required by `CODING_STANDARD.md` Section 4.
-* **Previously undocumented, and therefore never scheduled for review.** These modules were not listed in prior versions of this document, `ARCHITECTURE.md`, `ROADMAP.md`, or `CHANGELOG.md`.
-* **`Core/Error` currently depends on `Core/Logging`.** `ErrorInfo.mqh` includes `LogLevel.mqh` and uses `ENUM_LOG_LEVEL` for its `Severity` field. ADR-012 adopts mutual isolation between Error and Logging as target design; this is the concrete gap against that target, tracked for Sprint 006.
-
-None of these are functional/compile blockers by themselves (aside from the absolute-include violation, which should still compile inside a real MetaTrader install but breaks portability). They are tracked here as technical debt. A full correctness/compliance audit has been deliberately deferred — see `DECISIONS.md`, ADR-011 and ADR-012.
+* `Utilities/StringUtils.mqh` uses `ENUM_X`-style enum naming in one internal guard — low priority, no functional impact.
+* `AI_SwingBreakout_Pro.mq5` (main EA) has not yet been written — no composition root exists. `CContext` is not yet populated, `CModuleManager` is not yet wired. This is the next concrete task.
+* `ValidationUtils.mqh` compile result not yet confirmed — pending MetaEditor verification.
 
 ---
 
@@ -269,124 +236,34 @@ None of these are functional/compile blockers by themselves (aside from the abso
 
 Every framework module follows:
 
-1. Architecture review
+1. Architecture review / interface proposal
 2. Complete implementation
 3. Compile verification
 4. Integration verification
 5. Documentation update
 6. Git commit
 
-No partial framework implementations should be committed.
-
 ---
 
 # Current Sprint
 
-Sprint 004
+Sprint 007
 
-Objective
+Objectives:
 
-Rebuild
-
-```
-Include/Core/MathUtils.mqh
-```
-
-Status: **Completed this cycle.** The previous incremental version had a structural scope bug — the class body closed after its first section, leaving ~480 lines of intended methods (`NormalizePrice`, `PositionSize`, `RiskOfRuin`, statistics functions, etc.) floating outside the class entirely. It also hardcoded its epsilon value instead of using `CConstants::EPSILON`. It has been fully rewritten as a Core-only, static, epsilon-consistent utility class with no Trading/Risk domain logic (per ADR-003).
-
----
-
-# Immediate Next Tasks
-
-1. Decide disposition of legacy Core modules (Base, Config, InputParameters, Version, Error/*, Logging/*, Utilities/*) — bring into compliance, or formally grandfather with a documented exception. See DECISIONS.md ADR-011.
-2. Resolve absolute include path in `Error/TestErrorHandler.mqh`.
-3. Decouple `ErrorInfo.mqh` from `LogLevel.mqh` per ADR-012 (give Error its own severity type).
-4. Build `Include/Core/Platform.mqh`.
-5. Continue Risk module.
-
-Resolved this cycle: main EA file location confirmed (`AI_SwingBreakout_Pro.mq5`, project root) and its include-path convention documented — see ADR-012. `AI_SwingBreakout_Pro.rar` confirmed not part of the project and removed from documentation.
-
----
-
-# Future Roadmap
-
-Core
-
-↓
-
-Utilities
-
-↓
-
-Indicators
-
-↓
-
-Risk
-
-↓
-
-Trading
-
-↓
-
-AI
-
-↓
-
-Backtesting
-
-↓
-
-Optimization
-
-↓
-
-Production Release
+1. Confirm `ValidationUtils.mqh` compiles.
+2. Write `AI_SwingBreakout_Pro.mq5` — composition root: construct `CPlatform`, `CLogger`, `CErrorHandler`, wire into `CContext`, build `CModuleManager`, drive `OnInit`/`OnTick`/`OnDeinit`.
+3. Begin Risk Engine (`Include/Risk/`).
 
 ---
 
 # GitHub Workflow
 
-The repository is authoritative.
-
-Development workflow:
-
-Read repository
-
-↓
-
-Review architecture
-
-↓
-
-Modify complete source file
-
-↓
-
-Compile verification
-
-↓
-
-Update documentation
-
-↓
-
-Commit
-
-↓
-
-Continue
-
-GitHub history should always reflect the latest stable implementation.
+Read repository → Review architecture → Implement complete file → Compile → Update documentation → Commit → Continue.
 
 ---
 
 # Communication Rules
-
-Development conversations should be concise.
-
-Avoid repeating previous explanations.
 
 When the user writes
 
@@ -409,16 +286,14 @@ Continue directly with the next planned task.
 Current Phase
 
 ```
-Foundation Layer
+Foundation Layer → transitioning to Risk Engine
 ```
 
 Completion Estimate
 
 ```
-Approximately 35–40% (revised upward after reconciliation with actual repository contents; a meaningful portion of this is unreviewed legacy code, not newly built work)
+Approximately 55%
 ```
-
-Foundation modules are prioritized before higher-level trading logic.
 
 ---
 
@@ -433,22 +308,21 @@ Always read these documents before starting work:
 5. ROADMAP.md
 6. CHANGELOG.md
 
-Treat these documents together with the GitHub repository as the complete project context.
+Never assume prior chat history is available. Always continue from the current repository state.
 
-Never assume previous chat history is available.
+**Two MQL5-specific gotchas discovered this cycle that future sessions must know:**
 
-Always continue from the current repository state — and treat the repository, not prior documentation claims, as ground truth if the two ever disagree. Re-verify documentation against an actual repository export whenever one is available.
+1. MQL5 does not accept static class members (`CConstants::EPSILON`) as default parameter values — use two-overload pairs instead.
+2. MQL5 does not warn when a derived method hides a virtual base method instead of overriding it (different parameter list = new overload, not an override). Always verify virtual method signatures match exactly across the entire inheritance chain.
 
 ---
 
 # Definition of Done
 
-A module is considered complete only when:
+A module is complete only when:
 
 * Source code is production quality.
 * Compiles without errors.
 * Dependency rules are respected.
 * Documentation is updated.
 * Ready for Git commit.
-
-Only then should development continue to the next module.
