@@ -1,7 +1,11 @@
 ﻿//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : ErrorHandler.mqh                                       |
-//| Purpose : Central error manager (no logging dependency)         |
+//| Purpose : Central error manager — tracks the most recent error.  |
+//|           No logging dependency (ADR-012).                       |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_CORE_ERRORHANDLER_MQH
 #define AI_SWINGBREAKOUT_CORE_ERRORHANDLER_MQH
@@ -18,22 +22,23 @@ public:
 
    CErrorHandler()
    {
+      m_hasError = false;
       Clear();
    }
 
    void Clear()
    {
       m_lastError.Timestamp = 0;
-      m_lastError.Code      = 0;
-      m_lastError.Severity  = 0;
+      m_lastError.Code      = ERR_NONE;
+      m_lastError.Severity  = ERROR_SEVERITY_INFO;
       m_lastError.Module    = "";
       m_lastError.Function  = "";
       m_lastError.Message   = "";
       m_hasError = false;
    }
 
-   void SetError(int code,
-                 int severity,
+   void SetError(ENUM_ERROR_CODE code,
+                 ENUM_ERROR_SEVERITY severity,
                  string module,
                  string function,
                  string message)
@@ -59,4 +64,4 @@ public:
    }
 };
 
-#endif
+#endif // AI_SWINGBREAKOUT_CORE_ERRORHANDLER_MQH

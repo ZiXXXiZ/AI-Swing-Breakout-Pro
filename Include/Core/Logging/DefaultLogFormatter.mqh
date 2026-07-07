@@ -1,13 +1,14 @@
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+﻿//+------------------------------------------------------------------+
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : DefaultLogFormatter.mqh                                |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Default implementation of the logging formatter.               |
+//| Purpose : Default ILogFormatter implementation — renders a       |
+//|           SLogRecord into a single human-readable line           |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
-#ifndef __DEFAULTLOGFORMATTER_MQH__
-#define __DEFAULTLOGFORMATTER_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_DEFAULTLOGFORMATTER_MQH
+#define AI_SWINGBREAKOUT_CORE_DEFAULTLOGFORMATTER_MQH
 
 #include "Interfaces/ILogFormatter.mqh"
 
@@ -98,4 +99,4 @@ public:
    }
 };
 
-#endif
+#endif // AI_SWINGBREAKOUT_CORE_DEFAULTLOGFORMATTER_MQH

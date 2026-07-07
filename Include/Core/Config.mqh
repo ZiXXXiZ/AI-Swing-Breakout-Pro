@@ -169,6 +169,7 @@ public:
       if(Indicator.FastEMA >= Indicator.SlowEMA) return false;
       if(Indicator.ATRPeriod < 1) return false;
       if(Indicator.ADXPeriod < 1) return false;
+      if(Indicator.VolumeMAPeriod < 1) return false;
 
       return true;
    }

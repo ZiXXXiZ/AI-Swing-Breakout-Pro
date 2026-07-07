@@ -1,12 +1,12 @@
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+﻿//+------------------------------------------------------------------+
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : BaseObject.mqh                                         |
-//| Version : 2.0.0-alpha.2                                          |
-//| Author  : OpenAI & Project Team                                  |
-//|                                                                  |
-//| Purpose:                                                         |
-//|   Base class for all framework objects.                          |
-//|                                                                  |
+//| Purpose : Base class for all framework objects — minimal         |
+//|           lifecycle (Initialize/Shutdown) with no dependencies   |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
+//+------------------------------------------------------------------+
 //| Design Principles:                                               |
 //|   - Minimal responsibilities                                     |
 //|   - No logger dependency                                         |
@@ -14,8 +14,8 @@
 //|   - No trading logic                                             |
 //|   - Safe inheritance                                             |
 //+------------------------------------------------------------------+
-#ifndef __BASEOBJECT_MQH__
-#define __BASEOBJECT_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_BASEOBJECT_MQH
+#define AI_SWINGBREAKOUT_CORE_BASEOBJECT_MQH
 
 class CBaseObject
 {
@@ -68,4 +68,4 @@ public:
    }
 };
 
-#endif // __BASEOBJECT_MQH__
+#endif // AI_SWINGBREAKOUT_CORE_BASEOBJECT_MQH

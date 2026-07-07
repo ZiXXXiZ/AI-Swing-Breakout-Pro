@@ -1,19 +1,18 @@
 ﻿//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : StringUtils.mqh                                        |
-//| Version : 2.0.0-alpha.2                                          |
-//| Author  : AI Swing Breakout Team                                 |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Provides stateless string utility functions for the framework. |
-//|                                                                  |
+//| Purpose : Stateless string utility functions for the framework   |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
+//+------------------------------------------------------------------+
 //| Notes                                                            |
 //|   - Static utility class                                         |
 //|   - No internal state                                            |
 //|   - Thread-safe (stateless)                                      |
 //+------------------------------------------------------------------+
-#ifndef __STRINGUTILS_MQH__
-#define __STRINGUTILS_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_STRINGUTILS_MQH
+#define AI_SWINGBREAKOUT_CORE_STRINGUTILS_MQH
 
 //+------------------------------------------------------------------+
 //| String Utilities                                                 |
@@ -327,4 +326,4 @@ string CStringUtils::Repeat(
    return result;
 }
 
-#endif // __STRINGUTILS_MQH__
+#endif // AI_SWINGBREAKOUT_CORE_STRINGUTILS_MQH

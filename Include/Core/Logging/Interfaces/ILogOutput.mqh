@@ -1,18 +1,18 @@
 //+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : ILogOutput.mqh                                         |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Defines the interface for log output targets.                  |
-//|                                                                  |
+//| Purpose : Interface for log output targets                       |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
+//+------------------------------------------------------------------+
 //| Notes                                                            |
 //|   - Pure interface                                                |
 //|   - No implementation                                             |
 //|   - Used by Logger                                                 |
 //+------------------------------------------------------------------+
-#ifndef __ILOGOUTPUT_MQH__
-#define __ILOGOUTPUT_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_ILOGOUTPUT_MQH
+#define AI_SWINGBREAKOUT_CORE_ILOGOUTPUT_MQH
 
 class ILogOutput
 {
@@ -27,4 +27,4 @@ public:
    virtual void Close() {}
 };
 
-#endif // __ILOGOUTPUT_MQH__
+#endif // AI_SWINGBREAKOUT_CORE_ILOGOUTPUT_MQH

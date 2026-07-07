@@ -1,13 +1,14 @@
 //+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : JournalLogOutput.mqh                                   |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Writes formatted log messages to the MT5 Journal.              |
+//| Purpose : ILogOutput implementation that writes to the MT5       |
+//|           Experts Journal via Print()                            |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
-#ifndef __JOURNALLOGOUTPUT_MQH__
-#define __JOURNALLOGOUTPUT_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_JOURNALLOGOUTPUT_MQH
+#define AI_SWINGBREAKOUT_CORE_JOURNALLOGOUTPUT_MQH
 
 #include "Interfaces/ILogOutput.mqh"
 
@@ -58,4 +59,4 @@ public:
    }
 };
 
-#endif // __JOURNALLOGOUTPUT_MQH__
+#endif // AI_SWINGBREAKOUT_CORE_JOURNALLOGOUTPUT_MQH

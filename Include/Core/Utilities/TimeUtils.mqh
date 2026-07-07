@@ -1,10 +1,20 @@
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+﻿//+------------------------------------------------------------------+
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : TimeUtils.mqh                                          |
-//| Version : 1.0.0                                                  |
+//| Purpose : Stateless datetime utility functions for the framework |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
-#ifndef __TIMEUTILS_MQH__
-#define __TIMEUTILS_MQH__
+//| Fix: original file contained the entire content pasted twice,   |
+//| producing two nested #ifndef blocks sharing one #endif — the     |
+//| outer guard never closed. Duplicate removed; single clean copy   |
+//| kept (the second paste was the complete one — the first cut off  |
+//| mid-implementation, missing Minute/Second/StartOfDay/EndOfDay/  |
+//| FormatDate/FormatTime/FormatDateTime bodies).                    |
+//+------------------------------------------------------------------+
+#ifndef AI_SWINGBREAKOUT_CORE_TIMEUTILS_MQH
+#define AI_SWINGBREAKOUT_CORE_TIMEUTILS_MQH
 
 //+------------------------------------------------------------------+
 //| Time Utilities                                                   |
@@ -14,129 +24,27 @@ class CTimeUtils
 public:
 
    // Trading Day Helpers
-   static bool IsWeekend(const datetime value);
-   static bool IsTradingDay(const datetime value);
+   static bool     IsWeekend(const datetime value);
+   static bool     IsTradingDay(const datetime value);
 
    // Date Components
-   static int Year(const datetime value);
-   static int Month(const datetime value);
-   static int Day(const datetime value);
+   static int      Year(const datetime value);
+   static int      Month(const datetime value);
+   static int      Day(const datetime value);
 
    // Time Components
-   static int Hour(const datetime value);
-   static int Minute(const datetime value);
-   static int Second(const datetime value);
-   
+   static int      Hour(const datetime value);
+   static int      Minute(const datetime value);
+   static int      Second(const datetime value);
+
    // Day Boundaries
    static datetime StartOfDay(const datetime value);
    static datetime EndOfDay(const datetime value);
 
    // Formatting
-   static string FormatDate(const datetime value);
-   static string FormatTime(const datetime value);
-   static string FormatDateTime(const datetime value);
-};
-
-//+------------------------------------------------------------------+
-//| Is Weekend                                                       |
-//+------------------------------------------------------------------+
-bool CTimeUtils::IsWeekend(const datetime value)
-{
-   MqlDateTime dt;
-   TimeToStruct(value, dt);
-
-   return (dt.day_of_week == 0 || dt.day_of_week == 6);
-}
-
-//+------------------------------------------------------------------+
-//| Is Trading Day                                                   |
-//+------------------------------------------------------------------+
-bool CTimeUtils::IsTradingDay(const datetime value)
-{
-   return !IsWeekend(value);
-}
-
-//+------------------------------------------------------------------+
-//| Year                                                             |
-//+------------------------------------------------------------------+
-int CTimeUtils::Year(const datetime value)
-{
-   MqlDateTime dt;
-   TimeToStruct(value, dt);
-
-   return dt.year;
-}
-
-//+------------------------------------------------------------------+
-//| Month                                                            |
-//+------------------------------------------------------------------+
-int CTimeUtils::Month(const datetime value)
-{
-   MqlDateTime dt;
-   TimeToStruct(value, dt);
-
-   return dt.mon;
-}
-
-//+------------------------------------------------------------------+
-//| Day                                                              |
-//+------------------------------------------------------------------+
-int CTimeUtils::Day(const datetime value)
-{
-   MqlDateTime dt;
-   TimeToStruct(value, dt);
-
-   return dt.day;
-}
-
-//+------------------------------------------------------------------+
-//| Hour                                                             |
-//+------------------------------------------------------------------+
-int CTimeUtils::Hour(const datetime value)
-{
-   MqlDateTime dt;
-   TimeToStruct(value, dt);
-
-   return dt.hour;
-}
-
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
-//| File    : TimeUtils.mqh                                          |
-//| Version : 1.0.0                                                  |
-//+------------------------------------------------------------------+
-#ifndef __TIMEUTILS_MQH__
-#define __TIMEUTILS_MQH__
-
-//+------------------------------------------------------------------+
-//| Time Utilities                                                   |
-//+------------------------------------------------------------------+
-class CTimeUtils
-{
-public:
-
-   // Trading Day Helpers
-   static bool IsWeekend(const datetime value);
-   static bool IsTradingDay(const datetime value);
-
-   // Date Components
-   static int Year(const datetime value);
-   static int Month(const datetime value);
-   static int Day(const datetime value);
-
-   // Time Components
-   static int Hour(const datetime value);
-   static int Minute(const datetime value);
-   static int Second(const datetime value);
-   
-   // Day Boundaries
-   static datetime StartOfDay(const datetime value);
-   static datetime EndOfDay(const datetime value);
-
-   // Formatting
-   static string FormatDate(const datetime value);
-   static string FormatTime(const datetime value);
-   static string FormatDateTime(const datetime value);
+   static string   FormatDate(const datetime value);
+   static string   FormatTime(const datetime value);
+   static string   FormatDateTime(const datetime value);
 };
 
 //+------------------------------------------------------------------+
@@ -267,7 +175,7 @@ string CTimeUtils::FormatDate(const datetime value)
 //+------------------------------------------------------------------+
 string CTimeUtils::FormatTime(const datetime value)
 {
-   return TimeToString(value, TIME_MINUTES | TIME_SECONDS);
+   return TimeToString(value, TIME_MINUTES|TIME_SECONDS);
 }
 
 //+------------------------------------------------------------------+
@@ -275,7 +183,7 @@ string CTimeUtils::FormatTime(const datetime value)
 //+------------------------------------------------------------------+
 string CTimeUtils::FormatDateTime(const datetime value)
 {
-   return TimeToString(value, TIME_DATE | TIME_MINUTES | TIME_SECONDS);
+   return TimeToString(value, TIME_DATE|TIME_MINUTES|TIME_SECONDS);
 }
 
-#endif // __TIMEUTILS_MQH__
+#endif // AI_SWINGBREAKOUT_CORE_TIMEUTILS_MQH

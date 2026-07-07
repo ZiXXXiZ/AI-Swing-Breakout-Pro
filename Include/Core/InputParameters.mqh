@@ -1,11 +1,19 @@
-//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro v2.0 Institutional Edition       |
+﻿//+------------------------------------------------------------------+
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : InputParameters.mqh                                    |
-//| Version : 2.0.0-alpha.1                                          |
-//| Purpose : Expert Advisor Input Parameters                        |
+//| Purpose : Expert Advisor input parameters                        |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
 //+------------------------------------------------------------------+
-#ifndef __INPUTPARAMETERS_MQH__
-#define __INPUTPARAMETERS_MQH__
+//| Note: InpMagicNumber (below) and Config.mqh's MAGIC_NUMBER        |
+//| constant currently hold the same literal value independently.    |
+//| Nothing wires one from the other yet. Flagged as a design item    |
+//| for whenever Config is wired from these inputs — not fixed here, |
+//| since that's a data-flow decision, not a naming/header cleanup.  |
+//+------------------------------------------------------------------+
+#ifndef AI_SWINGBREAKOUT_CORE_INPUTPARAMETERS_MQH
+#define AI_SWINGBREAKOUT_CORE_INPUTPARAMETERS_MQH
 
 //==================================================================
 // General
@@ -105,4 +113,4 @@ input bool   InpEnableLogging        = true;
 input bool   InpWriteJournal         = true;
 input bool   InpDebugMode            = false;
 
-#endif
+#endif // AI_SWINGBREAKOUT_CORE_INPUTPARAMETERS_MQH

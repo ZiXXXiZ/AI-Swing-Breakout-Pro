@@ -1,23 +1,24 @@
 ﻿//+------------------------------------------------------------------+
-//| Project : AI Swing Breakout Pro                                  |
+//| Project : AI Swing Breakout Pro Framework                        |
+//| Module  : Core                                                   |
 //| File    : Logger.mqh                                             |
-//| Version : 2.0.0-alpha.2                                          |
-//|                                                                  |
-//| Purpose                                                          |
-//|   Central logging coordinator.                                   |
-//|                                                                  |
+//| Purpose : Central logging coordinator — manages configuration,   |
+//|           coordinates formatter/output, applies level filtering  |
+//| Author  : ZiXXXiZ                                                |
+//| Version : 2.0.0-alpha.3                                          |
+//+------------------------------------------------------------------+
 //| Responsibilities                                                 |
-//|   • Manage logging configuration                                 |
-//|   • Coordinate formatter/output                                  |
-//|   • Apply log level filtering                                    |
+//|   - Manage logging configuration                                 |
+//|   - Coordinate formatter/output                                  |
+//|   - Apply log level filtering                                    |
 //|                                                                  |
 //| Does NOT                                                         |
-//|   • Format text                                                   |
-//|   • Print messages                                                |
-//|   • Own formatter/output objects                                  |
+//|   - Format text                                                   |
+//|   - Print messages                                                |
+//|   - Own formatter/output objects                                  |
 //+------------------------------------------------------------------+
-#ifndef __LOGGER_MQH__
-#define __LOGGER_MQH__
+#ifndef AI_SWINGBREAKOUT_CORE_LOGGER_MQH
+#define AI_SWINGBREAKOUT_CORE_LOGGER_MQH
 
 #include "../Base/BaseObject.mqh"
 
@@ -64,9 +65,17 @@ public:
    }
 
    //---------------------------------------------------------------
-   // Initialize
+   // Configure
+   // Renamed from a previous "Initialize(ILogFormatter*, ILogOutput*)"
+   // — that name collided with CBaseObject::Initialize() (no
+   // parameters). Different parameter lists don't override a base
+   // virtual method, they hide it as a separate overload; this is
+   // the exact same defect class found and fixed in Engine.mqh (see
+   // CHANGELOG.md). Renaming avoids the collision outright. Chains
+   // to CBaseObject::Initialize() at the end instead of manually
+   // setting m_initialized, consistent with every other module.
    //---------------------------------------------------------------
-   virtual bool Initialize(
+   bool Configure(
       ILogFormatter *formatter,
       ILogOutput *output)
    {
@@ -79,9 +88,7 @@ public:
       m_formatter = formatter;
       m_output    = output;
 
-      m_initialized = true;
-
-      return true;
+      return CBaseObject::Initialize();
    }
 
    //---------------------------------------------------------------
@@ -92,7 +99,7 @@ public:
       m_formatter = NULL;
       m_output    = NULL;
 
-      m_initialized = false;
+      CBaseObject::Shutdown();
    }
 
    //---------------------------------------------------------------
@@ -140,4 +147,4 @@ protected:
    }
 };
 
-#endif // __LOGGER_MQH__
+#endif // AI_SWINGBREAKOUT_CORE_LOGGER_MQH
