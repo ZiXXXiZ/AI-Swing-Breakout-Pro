@@ -2,7 +2,7 @@
 
 # PROJECT_CONTEXT
 
-**Version:** 2.0.0-alpha.4
+**Version:** 2.0.0-alpha.5
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -72,6 +72,8 @@ Trading Engine
         │
 Risk Engine
         │
+Signals
+        │
 Indicators
         │
 Framework (Context / Module / ModuleManager / Engine)
@@ -128,12 +130,26 @@ AI_SwingBreakout_Pro/
 │   │   ├── Utilities/
 │   │   │   ├── StringUtils.mqh
 │   │   │   └── TimeUtils.mqh
+│   │   ├── ValidationUtils.mqh
 │   │   └── Version.mqh
 │   ├── Framework/
-│   │   ├── Context.mqh
+│   │   ├── Context.mqh             ← CMarketSnapshot added this cycle
+│   │   ├── Engine.mqh              ← orchestration pipeline added this cycle
 │   │   ├── Module.mqh
-│   │   ├── ModuleManager.mqh
-│   │   └── Engine.mqh
+│   │   └── ModuleManager.mqh
+│   ├── Indicators/
+│   │   ├── IndicatorBase.mqh
+│   │   ├── EMAIndicator.mqh
+│   │   ├── ATRIndicator.mqh
+│   │   └── ADXIndicator.mqh
+│   ├── Signals/
+│   │   ├── SignalResult.mqh
+│   │   ├── SignalBase.mqh
+│   │   └── BreakoutSignal.mqh
+│   ├── Risk/
+│   │   ├── RiskResult.mqh
+│   │   ├── RiskBase.mqh
+│   │   └── RiskManager.mqh
 │   └── Tests/
 │       ├── Core/Utilities/
 │       │   ├── TestStringUtils.ex5
@@ -185,7 +201,7 @@ Files inside `Include/` are unaffected — see ADR-012.
 * `MathUtils.mqh` — rebuilt, compile-verified
 * `Config.mqh` — finalized, closed
 * `Platform.mqh` — built, compile-verified
-* `ValidationUtils.mqh` — built (compile pending)
+* `ValidationUtils.mqh` — built, compile-verified
 * `TradeStructures.mqh`
 * `MarketStructures.mqh`
 * `RiskStructures.mqh`
@@ -193,8 +209,6 @@ Files inside `Include/` are unaffected — see ADR-012.
 * `StatisticsStructures.mqh`
 
 ## Core — Sprint 006 Standards Pass Complete
-
-All 16 files below were brought into full compliance this cycle. No longer "pending review."
 
 * `Base/BaseObject.mqh`
 * `InputParameters.mqh`
@@ -204,31 +218,48 @@ All 16 files below were brought into full compliance this cycle. No longer "pend
 * `Error/ErrorInfo.mqh` — decoupled from Logging (now uses own `ENUM_ERROR_SEVERITY`)
 * `Error/TestErrorHandler.mqh` — rewritten to test current API, absolute include fixed
 * `Logging/LogLevel.mqh`
-* `Logging/LogRecord.mqh` — 6 fields added (`Function`/`Line`/`Symbol`/`Timeframe`/`Ticket`/`ErrorCode`)
+* `Logging/LogRecord.mqh` — 6 fields added
 * `Logging/Logger.mqh` — `Initialize()` renamed to `Configure()` (signature-hiding fix)
 * `Logging/DefaultLogFormatter.mqh`
 * `Logging/JournalLogOutput.mqh`
 * `Logging/Interfaces/ILogFormatter.mqh`
 * `Logging/Interfaces/ILogOutput.mqh`
 * `Utilities/StringUtils.mqh`
-* `Utilities/TimeUtils.mqh` — duplicate content removed (file was pasted twice, outer `#ifndef` never closed)
+* `Utilities/TimeUtils.mqh` — duplicate content removed
 
-## Framework Layer — New This Cycle
+## Framework Layer — Complete
 
-* `Framework/Context.mqh`
+* `Framework/Context.mqh` — `CMarketSnapshot` added this cycle (ADR-014)
 * `Framework/Module.mqh`
 * `Framework/ModuleManager.mqh`
-* `Framework/Engine.mqh`
+* `Framework/Engine.mqh` — orchestration pipeline added this cycle (ADR-015)
 
-All compile-verified together. `CContext` injection standardized at `CModule` base — see ADR-013.
+## Indicators Layer — Complete
+
+* `Indicators/IndicatorBase.mqh`
+* `Indicators/EMAIndicator.mqh`
+* `Indicators/ATRIndicator.mqh`
+* `Indicators/ADXIndicator.mqh`
+
+## Signals Layer — Complete
+
+* `Signals/SignalResult.mqh`
+* `Signals/SignalBase.mqh`
+* `Signals/BreakoutSignal.mqh`
+
+## Risk Layer — Complete
+
+* `Risk/RiskResult.mqh`
+* `Risk/RiskBase.mqh`
+* `Risk/RiskManager.mqh`
 
 ---
 
 # Known Issues
 
 * `Utilities/StringUtils.mqh` uses `ENUM_X`-style enum naming in one internal guard — low priority, no functional impact.
-* `AI_SwingBreakout_Pro.mq5` (main EA) has not yet been written — no composition root exists. `CContext` is not yet populated, `CModuleManager` is not yet wired. This is the next concrete task.
-* `ValidationUtils.mqh` compile result not yet confirmed — pending MetaEditor verification.
+* `RiskManager.mqh` uses `stopLossPips = 50.0` placeholder — ATR-based stop loss integration is a future task (Stage 7).
+* `AI_SwingBreakout_Pro.mq5` Stage 6 wiring not yet complete — composition root does not yet instantiate Indicators, Signal, Risk, or wire them into `CEngine`.
 
 ---
 
@@ -247,13 +278,16 @@ Every framework module follows:
 
 # Current Sprint
 
-Sprint 007
+Sprint 007 — Stage 6
 
 Objectives:
 
-1. Confirm `ValidationUtils.mqh` compiles.
-2. Write `AI_SwingBreakout_Pro.mq5` — composition root: construct `CPlatform`, `CLogger`, `CErrorHandler`, wire into `CContext`, build `CModuleManager`, drive `OnInit`/`OnTick`/`OnDeinit`.
-3. Begin Risk Engine (`Include/Risk/`).
+1. ✅ Task 1 — `Context.mqh` — `CMarketSnapshot` added
+2. ✅ Task 2 — Indicators layer (Base, EMA, ATR, ADX)
+3. ✅ Task 3 — Signals layer (Result, Base, BreakoutSignal)
+4. ✅ Task 4 — Risk layer (Result, Base, RiskManager)
+5. ✅ Task 5 — `Engine.mqh` orchestration pipeline
+6. ⏳ Task 6 — `AI_SwingBreakout_Pro.mq5` Stage 6 wiring ← NEXT
 
 ---
 
@@ -286,13 +320,13 @@ Continue directly with the next planned task.
 Current Phase
 
 ```
-Foundation Layer → transitioning to Risk Engine
+Indicators / Signals / Risk — complete. Wiring into main EA next.
 ```
 
 Completion Estimate
 
 ```
-Approximately 55%
+Approximately 75%
 ```
 
 ---
@@ -307,13 +341,21 @@ Always read these documents before starting work:
 4. DECISIONS.md
 5. ROADMAP.md
 6. CHANGELOG.md
+7. ProjectManagerSkill.md
 
 Never assume prior chat history is available. Always continue from the current repository state.
 
-**Two MQL5-specific gotchas discovered this cycle that future sessions must know:**
+**MQL5-specific gotchas — must know:**
 
-1. MQL5 does not accept static class members (`CConstants::EPSILON`) as default parameter values — use two-overload pairs instead.
-2. MQL5 does not warn when a derived method hides a virtual base method instead of overriding it (different parameter list = new overload, not an override). Always verify virtual method signatures match exactly across the entire inheritance chain.
+1. No static class members as default parameter values — use overload pairs.
+2. Virtual method signature must match exactly — different parameter list hides base, compiles clean, fails silently. Always use `override`.
+3. No reference return types (`Type&`) — use `GetPointer()` for class members.
+4. `GetPointer()` works on class instances only, not structs — this is why `SMarketSnapshot` became `CMarketSnapshot`.
+5. `CopyBuffer()` fills arrays newest-to-oldest by default — always call `ArraySetAsSeries(buffer, true)` first.
+6. Indicator handles must be created in `Initialize()`, not constructor.
+7. `CLogger` uses `Configure()`, not `Initialize()`.
+8. `SymbolInfoString(_Symbol, SYMBOL_NAME)` is invalid — use `_Symbol` directly.
+9. `CValidationUtils::IsValidVolume()` signature is `(string symbol, double volume)` — symbol first.
 
 ---
 

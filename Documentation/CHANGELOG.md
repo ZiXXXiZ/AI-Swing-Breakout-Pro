@@ -18,6 +18,135 @@ Example:
 
 ---
 
+# Version 2.0.0-alpha.5
+
+**Status**
+
+Active Development
+
+**Date**
+
+July 2026
+
+---
+
+# Summary
+
+This release completes Sprint 007 Tasks 1–5: `CMarketSnapshot` added to `Context.mqh`, the full Indicators layer (IndicatorBase, EMAIndicator, ATRIndicator, ADXIndicator), Signals layer (SignalResult, SignalBase, BreakoutSignal), Risk layer (RiskResult, RiskBase, RiskManager), and the `Engine.mqh` orchestration pipeline. Four bugs were found and fixed during implementation — none were compile errors.
+
+---
+
+# Added
+
+## Framework — CMarketSnapshot (Context.mqh)
+
+`CMarketSnapshot` added to `Include/Framework/Context.mqh`. Shared read/write buffer owned by `CContext`; Indicator modules write into it each tick via `CContext::Snapshot()`; Signal and Risk modules read from it. Carries `FastEMA`, `SlowEMA`, `ATR`, `ADX`, `PlusDI`, `MinusDI`, `TrendDirection`, `Spread`, `Volume`, and `IsReady`. `IsReady` must be set true by the Indicator layer only after all fields are populated for the current bar; Signal and Risk modules must check it before consuming any field.
+
+## Indicators Layer (new — `Include/Indicators/`)
+
+```text
+IndicatorBase.mqh   — abstract base, owns handle lifecycle (CreateHandle / Shutdown / IsReady)
+EMAIndicator.mqh    — dual-handle EMA (fast + slow), writes FastEMA / SlowEMA to snapshot
+ATRIndicator.mqh    — ATR, writes ATR to snapshot
+ADXIndicator.mqh    — ADX with +DI / -DI, writes ADX / PlusDI / MinusDI to snapshot
+```
+
+All four compile-verified: 0 errors, 0 warnings.
+
+## Signals Layer (new — `Include/Signals/`)
+
+```text
+SignalResult.mqh    — SSignalResult struct (Direction, Confidence, EntryPrice, IsValid)
+SignalBase.mqh      — abstract base CSignalBase, owns GetResult() / Update() contract
+BreakoutSignal.mqh  — concrete CBreakoutSignal, reads CMarketSnapshot, produces SSignalResult
+```
+
+All three compile-verified: 0 errors, 0 warnings.
+
+## Risk Layer (new — `Include/Risk/`)
+
+```text
+RiskResult.mqh      — SRiskResult struct (IsAllowed, LotSize, StopLoss, TakeProfit)
+RiskBase.mqh        — abstract base CRiskBase, owns Calculate() contract
+RiskManager.mqh     — concrete CRiskManager, reads SSignalResult, produces SRiskResult
+```
+
+All three compile-verified: 0 errors, 0 warnings.
+
+Note: `RiskManager.mqh` uses `stopLossPips = 50.0` placeholder. ATR-based stop loss integration is a future task (Stage 7). See PROJECT_CONTEXT.md Known Issues.
+
+## Framework — Engine.mqh orchestration pipeline
+
+`CEngine::Update()` now drives the full per-tick pipeline in fixed sequence:
+
+```text
+1. UpdateIndicators()  — best-effort, all three called regardless of individual failures
+2. EvaluateSignal()    — reads snapshot (guards IsReady internally), produces SSignalResult
+3. EvaluateRisk()      — reads SSignalResult, produces SRiskResult
+4. Execution           — placeholder (Stage 7)
+```
+
+`CEngine` holds non-owning pointers to `CEMAIndicator`, `CATRIndicator`, `CADXIndicator`, `CBreakoutSignal`, `CRiskManager` — wired by the composition root via `SetIndicators()`, `SetSignal()`, `SetRisk()`.
+
+---
+
+# Fixed
+
+## Context.mqh — CMarketSnapshot must be a class, not a struct
+
+Initial design used `struct SMarketSnapshot`. MQL5's `GetPointer()` works on class instances only — structs are value types and cannot be returned as pointers. `CContext::Snapshot()` must return a writable pointer so Indicator modules can populate fields. Changed to `class CMarketSnapshot`. All field access unchanged; only the type declaration and naming prefix changed (`S` → `C`). See ADR-014.
+
+## IndicatorBase.mqh — `SymbolInfoString(_Symbol, SYMBOL_NAME)` is invalid in MQL5
+
+Initial `Initialize()` used `m_symbol = SymbolInfoString(_Symbol, SYMBOL_NAME)` to read the current symbol. `SYMBOL_NAME` is not a valid `ENUM_SYMBOL_INFO_STRING` property — MQL5 does not expose it via `SymbolInfoString()`. Fixed by assigning `m_symbol = _Symbol` directly. `_Symbol` is the built-in terminal string for the chart symbol and is always correct.
+
+## ValidationUtils.mqh — `IsValidVolume()` argument order
+
+An earlier call site passed arguments as `IsValidVolume(volume, symbol)` — volume first, symbol second. The actual signature is `IsValidVolume(const string symbol, const double volume)` — symbol first. MQL5 does not enforce argument names at call sites, so this compiled silently and produced incorrect results (a double being passed where a string was expected, and vice versa). Fixed: all call sites corrected to `IsValidVolume(symbol, volume)`.
+
+## Engine.mqh — UpdateIndicators() changed from all-or-nothing to best-effort
+
+Initial implementation returned `false` from `Update()` if any single indicator's `Update()` call failed:
+
+```cpp
+if(!m_ema.Update()) return false;
+if(!m_atr.Update()) return false;
+if(!m_adx.Update()) return false;
+```
+
+This was too aggressive — a single indicator failing on one tick (e.g. not yet having enough bars calculated) would abort the entire pipeline before the Signal module could check `snapshot.IsReady`. Changed to best-effort: all three indicators are called regardless of individual return values. The Signal module detects incomplete data through `CMarketSnapshot::IsReady`, which the Indicator layer sets only when all fields are populated. Failures are not propagated — the snapshot validity flag is the contract, not the indicator return value.
+
+---
+
+# Engineering Decisions Introduced
+
+* ADR-014: CMarketSnapshot — class vs struct (GetPointer requirement)
+* ADR-015: Engine.mqh orchestration pipeline design
+
+---
+
+# Project Status
+
+Current Phase
+
+```text
+Indicators / Signals / Risk — complete. Stage 6 wiring of AI_SwingBreakout_Pro.mq5 next.
+```
+
+Overall Progress
+
+```text
+Approximately 75%
+```
+
+Current Sprint
+
+```text
+Sprint 007 — Task 6: AI_SwingBreakout_Pro.mq5 Stage 6 wiring
+```
+
+---
+
 # Version 2.0.0-alpha.4
 
 **Status**

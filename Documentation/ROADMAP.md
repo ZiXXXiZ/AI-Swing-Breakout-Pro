@@ -2,7 +2,7 @@
 
 # ROADMAP
 
-**Version:** 2.0.0-alpha.4
+**Version:** 2.0.0-alpha.5
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -39,14 +39,16 @@ Build a production-quality, modular MQL5 trading framework capable of supporting
 
 ```text
 Foundation Layer          ██████████  100%
-Framework Layer           ████████░░   80%  (wiring into main EA pending)
-Infrastructure Layer      ██░░░░░░░░   20%  (Error/Logging/String/Time done via Sprint 006)
-Risk Layer                ░░░░░░░░░░    0%
+Framework Layer           ██████████  100%
+Infrastructure Layer      ██████████  100%  (Error/Logging/String/Time done via Sprint 006)
+Indicators Layer          ██████████  100%
+Signals Layer             ██████████  100%
+Risk Layer                ██████████  100%
 Trading Layer             ░░░░░░░░░░    0%
 AI Layer                  ░░░░░░░░░░    0%
 Testing & Optimization    ░░░░░░░░░░    0%
 
-Overall Project Progress  █████░░░░░   55%
+Overall Project Progress  ███████░░░   75%
 ```
 
 ---
@@ -111,11 +113,16 @@ Status: 🚧 In Progress
 
 ## Sprint 007 — Composition Root + Risk Engine Start
 
+## Sprint 007 — Composition Root + Indicators + Signals + Risk + Engine Wiring
+
 Objectives:
 
-1. Confirm `ValidationUtils.mqh` compiles (carry-forward from Sprint 005).
-2. Write `AI_SwingBreakout_Pro.mq5` — the composition root. Construct `CPlatform`, `CLogger` (via `Configure()`), `CErrorHandler`, wire all three into a `CContext`, build a `CModuleManager`, and drive `OnInit()`/`OnTick()`/`OnDeinit()` through the module system. This is the first end-to-end integration test — every module built so far gets exercised together for the first time.
-3. Begin `Include/Risk/` — position sizing, risk calculator. Salvage the formulas that were in the old broken `MathUtils.mqh` (`PositionSize`, `RiskOfRuin`, `ProfitFactor`, `Expectancy`, `DrawdownPercent`, `RecoveryFactor`) — these were architecturally misplaced in Core, but the math itself is sound and should be reused here.
+1. ✅ Task 1 — `Context.mqh` — `CMarketSnapshot` added (ADR-014)
+2. ✅ Task 2 — Indicators layer — `IndicatorBase.mqh`, `EMAIndicator.mqh`, `ATRIndicator.mqh`, `ADXIndicator.mqh` — compile-verified
+3. ✅ Task 3 — Signals layer — `SignalResult.mqh`, `SignalBase.mqh`, `BreakoutSignal.mqh` — compile-verified
+4. ✅ Task 4 — Risk layer — `RiskResult.mqh`, `RiskBase.mqh`, `RiskManager.mqh` — compile-verified
+5. ✅ Task 5 — `Engine.mqh` — orchestration pipeline added (ADR-015) — compile-verified
+6. ⏳ Task 6 — `AI_SwingBreakout_Pro.mq5` — Stage 6 wiring: instantiate Indicators, Signal, Risk; wire all into `CEngine` ← **NEXT**
 
 ---
 
@@ -221,11 +228,9 @@ Release Criteria:
 
 Current Sprint: **Sprint 007**
 
-Current Tasks (in order):
+Current Task:
 
-1. Confirm `ValidationUtils.mqh` compile result
-2. Write `AI_SwingBreakout_Pro.mq5` (composition root / integration test)
-3. Begin `Include/Risk/` — interface proposal first per agreed workflow
+* ⏳ Task 6 — `AI_SwingBreakout_Pro.mq5` Stage 6 wiring — instantiate `CEMAIndicator`, `CATRIndicator`, `CADXIndicator`, `CBreakoutSignal`, `CRiskManager`; wire all into `CEngine`; drive full pipeline through `OnInit()`/`OnTick()`/`OnDeinit()`
 
 Known MQL5 gotchas to check in every new file going forward:
 

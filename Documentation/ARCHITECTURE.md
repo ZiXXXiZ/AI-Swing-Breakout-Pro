@@ -2,7 +2,7 @@
 
 ## ARCHITECTURE
 
-**Version:** 2.0.0-alpha.4
+**Version:** 2.0.0-alpha.5
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -77,6 +77,22 @@ AI_SwingBreakout_Pro/
 │   │   ├── ModuleManager.mqh
 │   │   └── Engine.mqh
 │   │
+│   ├── Indicators/
+│   │   ├── IndicatorBase.mqh
+│   │   ├── EMAIndicator.mqh
+│   │   ├── ATRIndicator.mqh
+│   │   └── ADXIndicator.mqh
+│   │
+│   ├── Signals/
+│   │   ├── SignalResult.mqh
+│   │   ├── SignalBase.mqh
+│   │   └── BreakoutSignal.mqh
+│   │
+│   ├── Risk/
+│   │   ├── RiskResult.mqh
+│   │   ├── RiskBase.mqh
+│   │   └── RiskManager.mqh
+│   │
 │   └── Tests/
 │       ├── Core/
 │       │   └── Utilities/
@@ -92,7 +108,7 @@ AI_SwingBreakout_Pro/
 
 Note: `Utilities/` and `Error/` and `Logging/` exist nested inside `Core/`, not as separate top-level Include directories as earlier drafts of this document assumed. This document now reflects that nesting.
 
-Note: `Include/Indicators/`, `Include/Trading/`, `Include/Risk/`, `Include/AI/`, and `Include/UI/` do not exist on disk yet — they are future module locations, covered under the Long-Term Roadmap (Section 13) and `ROADMAP.md` Phases 4–8, not part of the current confirmed tree.
+Note: `Include/Trading/`, `Include/AI/`, and `Include/UI/` do not exist on disk yet — they are future module locations, covered under the Long-Term Roadmap (Section 13) and `ROADMAP.md` Phases 6–8, not part of the current confirmed tree.
 
 ---
 
@@ -352,7 +368,7 @@ Repository documentation must always reflect the current implementation. When do
 
 ---
 
-# 12. Current Progress (Reconciled — July 2026, alpha.4)
+# 12. Current Progress (Reconciled — July 2026, alpha.5)
 
 ## Core — Fully Standards-Compliant
 
@@ -360,7 +376,7 @@ Repository documentation must always reflect the current implementation. When do
 * `MathUtils.mqh` — rebuilt, compile-verified
 * `Config.mqh` — finalized and closed
 * `Platform.mqh` — built, compile-verified
-* `ValidationUtils.mqh` — built, compile pending
+* `ValidationUtils.mqh` — built, compile-verified
 * `TradeStructures.mqh`, `MarketStructures.mqh`, `RiskStructures.mqh`, `AccountStructures.mqh`, `StatisticsStructures.mqh`
 
 ## Core — Sprint 006 Complete (all 16 files standards-compliant)
@@ -378,14 +394,34 @@ Repository documentation must always reflect the current implementation. When do
 
 ## Framework Layer — Complete, Compiled Clean
 
-* `Framework/Context.mqh`, `Framework/Module.mqh`, `Framework/ModuleManager.mqh`, `Framework/Engine.mqh`
+* `Framework/Context.mqh` — `CMarketSnapshot` added (ADR-014)
+* `Framework/Module.mqh`, `Framework/ModuleManager.mqh`
+* `Framework/Engine.mqh` — orchestration pipeline added (ADR-015)
 * `CContext` injection standardized at `CModule` base — see ADR-013
+
+## Indicators Layer — Complete, Compiled Clean
+
+* `Indicators/IndicatorBase.mqh`
+* `Indicators/EMAIndicator.mqh`
+* `Indicators/ATRIndicator.mqh`
+* `Indicators/ADXIndicator.mqh`
+
+## Signals Layer — Complete, Compiled Clean
+
+* `Signals/SignalResult.mqh`
+* `Signals/SignalBase.mqh`
+* `Signals/BreakoutSignal.mqh`
+
+## Risk Layer — Complete, Compiled Clean
+
+* `Risk/RiskResult.mqh`
+* `Risk/RiskBase.mqh`
+* `Risk/RiskManager.mqh`
 
 ## Not Yet Started
 
-* `AI_SwingBreakout_Pro.mq5` — composition root (Sprint 007)
-* `Include/Risk/` — Risk Engine (Sprint 007)
-* `Include/Indicators/`, `Include/Trading/`, `Include/AI/`, `Include/UI/` — future phases
+* `AI_SwingBreakout_Pro.mq5` — Stage 6 wiring (Sprint 007, Task 6)
+* `Include/Trading/`, `Include/AI/`, `Include/UI/` — future phases
 
 ## Tests
 

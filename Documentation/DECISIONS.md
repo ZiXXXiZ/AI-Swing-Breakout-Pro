@@ -2,7 +2,7 @@
 
 # DECISIONS
 
-**Version:** 2.0.0-alpha.2
+**Version:** 2.0.0-alpha.5
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -539,6 +539,96 @@ Initial review found a serious defect: `CModule::Initialize()` took no parameter
 - Future Trading/Risk/AI modules get context access "for free" by inheriting from `CModule`, rather than each needing to duplicate `m_context` storage and validation the way `CEngine` originally did.
 - `CModuleManager` growing a destructor that deletes modules later, if that's ever wanted, is a deliberate design change requiring a new ADR — not an oversight to silently fix.
 - `ARCHITECTURE.md` and `ROADMAP.md` require updates to reflect this layer's existence (folder structure, dependency diagram, sprint history) — tracked as part of this same documentation pass rather than deferred, unlike some earlier legacy-module findings, because this layer was built this cycle rather than discovered as pre-existing.
+
+---
+
+# ADR-014
+
+## Title
+
+CMarketSnapshot — Class Instead of Struct; Shared via CContext
+
+**Status**
+
+Accepted
+
+**Date**
+
+July 2026
+
+### Context
+
+The Indicators layer needs to write computed values (EMA, ATR, ADX, etc.) into a shared buffer each tick. Signal and Risk modules then read from that same buffer. The buffer must be reachable from any module that holds a `CContext*`, without modules needing direct pointers to each other.
+
+The initial design used `struct SMarketSnapshot` stored by value inside `CContext`, with `CContext::Snapshot()` intended to return a pointer to it so Indicators could write through that pointer. This failed at the design stage: MQL5's `GetPointer()` works on class instances only. Structs are value types — you cannot take a pointer to a struct member and write through it reliably. `SMarketSnapshot` also cannot use `GetPointer()` for the same reason.
+
+### Decision
+
+1. `SMarketSnapshot` is replaced by `class CMarketSnapshot`. The class is stored by value inside `CContext` as `CMarketSnapshot m_snapshot` — no heap allocation.
+2. `CContext::Snapshot()` returns `CMarketSnapshot*` via `GetPointer(m_snapshot)`. This gives Indicator modules a writable pointer to the shared buffer.
+3. `CMarketSnapshot` carries: `FastEMA`, `SlowEMA`, `ATR`, `ADX`, `PlusDI`, `MinusDI`, `TrendDirection`, `Spread`, `Volume`, and `IsReady`. All fields are public — the class is a data-carrying buffer, not an encapsulated object.
+4. `IsReady` is the contract between layers. Indicator modules set it `true` only after all fields are populated for the current bar. Signal and Risk modules must check `IsReady` before reading any field. `CContext::IsValid()` does not check `IsReady` — it checks only that the three shared services (Platform/Logger/ErrorHandler) are non-null.
+5. The `Snapshot()` getter is non-const on `CContext` — Indicator modules need write access. Signal and Risk modules receive `const CContext*` from `CModule::Context()` and must call `Snapshot()` through that. Since `Snapshot()` is non-const, they cannot call it through a const pointer — this is intentional and enforces the read-only contract at the type level without needing separate getter overloads.
+
+### Consequences
+
+- `GetPointer()` works correctly. Indicator modules can write through the returned pointer each tick.
+- No heap allocation required. `CMarketSnapshot` has the same lifetime as `CContext`.
+- The naming prefix changes from `S` to `C` to reflect the class type. All references updated.
+- Signal and Risk modules cannot accidentally write to the snapshot through `const CContext*` — the compiler enforces this.
+- Future snapshot fields (RSI, MACD, Bollinger Bands, etc.) are added to `CMarketSnapshot` only — no other files need changing unless they consume those new fields.
+
+---
+
+# ADR-015
+
+## Title
+
+CEngine Orchestration Pipeline — Fixed Sequence, Best-Effort Indicators
+
+**Status**
+
+Accepted
+
+**Date**
+
+July 2026
+
+### Context
+
+`CEngine` is the top-level orchestration module. It holds non-owning pointers to three Indicator modules (`CEMAIndicator`, `CATRIndicator`, `CADXIndicator`), one Signal module (`CBreakoutSignal`), and one Risk module (`CRiskManager`). These are wired by the composition root via `SetIndicators()`, `SetSignal()`, `SetRisk()` before `Initialize()` is called.
+
+Several design questions arose during implementation:
+
+**(a) Constructor vs setter for indicator periods.** Indicator subclasses could receive their period parameters via constructor or via post-construction setters.
+
+**(b) Rollback on `CreateHandle()` failure.** If `CIndicatorBase::Initialize()` calls `CreateHandle()` and it fails, the base class state (`m_initialized`, `m_context`) has already been set by `CModule::Initialize()`. This state needs to be cleaned up before returning `false`.
+
+**(c) UpdateIndicators() failure policy.** If one indicator's `Update()` returns `false`, should the pipeline abort or continue?
+
+### Decision
+
+1. **Constructor parameters for indicator periods (adopted).** Each indicator subclass receives its period(s) and timeframe via constructor: `CEMAIndicator(fastPeriod, slowPeriod, timeframe)`, `CATRIndicator(period, timeframe)`, `CADXIndicator(period, timeframe)`. Periods are fixed at construction and cannot be changed after the fact. Post-construction setters are not provided. This is consistent with the existing `CModule(name)` pattern and avoids the risk of calling `Initialize()` on an indicator whose configuration is incomplete.
+
+2. **Rollback on `CreateHandle()` failure (adopted).** If `CreateHandle()` returns `false` inside `CIndicatorBase::Initialize()`, the method calls `CModule::Shutdown()` before returning `false`. This reverts `m_initialized` and clears `m_context`, leaving the object in a clean, pre-initialized state. A partial initialization — `m_context` set but `m_handle` invalid — is not a valid state and must not be allowed to persist.
+
+3. **`UpdateIndicators()` is best-effort and returns void (adopted).** The initial implementation returned `false` from `CEngine::Update()` if any single indicator's `Update()` call failed. This was changed: `UpdateIndicators()` is `void` and calls all three indicators unconditionally regardless of individual return values. The rationale: a single indicator not yet having enough bars calculated is not an engine error — it is expected behaviour on startup. The Signal module detects this correctly through `CMarketSnapshot::IsReady`, which Indicator modules set only after all fields are populated. Aborting the pipeline on any indicator failure would prevent the Signal module from ever having the opportunity to detect incomplete data through its designed-for channel.
+
+4. **Fixed pipeline sequence (adopted).** `CEngine::Update()` always executes in this order:
+   - `UpdateIndicators()` — all three, best-effort
+   - `EvaluateSignal()` — reads snapshot, aborts pipeline if signal evaluation fails
+   - `EvaluateRisk()` — reads signal result, aborts pipeline if risk evaluation fails
+   - Execution — Stage 7 placeholder
+
+   Signal and Risk evaluation are not best-effort — if either returns `false`, `Update()` returns `false`. Only Indicator updates are best-effort, because the snapshot validity flag (`IsReady`) is the correct mechanism to communicate readiness downstream.
+
+### Consequences
+
+- Indicator configuration errors are caught at object construction, not at `Initialize()` time.
+- Partial initialization is impossible — `Shutdown()` rollback ensures either full success or full rollback.
+- The pipeline does not abort on startup when indicators are still warming up. This eliminates false-negative engine failures during the first N bars of a session.
+- Adding a fourth indicator in future requires: adding a member pointer to `CEngine`, updating `SetIndicators()`, and calling it in `UpdateIndicators()`. No other files change.
+- Execution (Stage 7) will be inserted at step 4 of the pipeline when implemented. The slot is already present as a comment placeholder.
 
 ---
 
