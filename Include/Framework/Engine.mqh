@@ -2,45 +2,146 @@
 //| Project : AI Swing Breakout Pro Framework                        |
 //| Module  : Framework                                              |
 //| File    : Engine.mqh                                             |
-//| Purpose : Top-level orchestration module. Extension point for    |
-//|           engine-specific lifecycle behavior beyond CModule's    |
-//|           defaults, once Trading/Risk/AI modules exist to drive. |
+//| Purpose : Top-level orchestration module. Owns non-owning        |
+//|           pointers to Indicators, Signal, and Risk modules,      |
+//|           executing them in fixed sequence each tick.            |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.3                                          |
+//| Version : 2.0.0-alpha.4                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_FRAMEWORK_ENGINE_MQH
 #define AI_SWINGBREAKOUT_FRAMEWORK_ENGINE_MQH
 
 #include "Module.mqh"
 #include "Context.mqh"
+#include "../Indicators/EMAIndicator.mqh"
+#include "../Indicators/ATRIndicator.mqh"
+#include "../Indicators/ADXIndicator.mqh"
+#include "../Signals/BreakoutSignal.mqh"
+#include "../Risk/RiskManager.mqh"
 
-//+------------------------------------------------------------------+
-//| Class CEngine                                                    |
-//| Description:                                                     |
-//|   Inherits Initialize(CContext*), Shutdown(), and Context()      |
-//|   directly from CModule — no need to redeclare m_context or      |
-//|   override those methods here. Previously this class declared    |
-//|   its own Initialize(CContext*) alongside CModule's Initialize() |
-//|   (no arguments); different parameter lists meant it never       |
-//|   actually overrode the base, so CModuleManager's polymorphic    |
-//|   call silently invoked the wrong one. Fixed by moving CContext  |
-//|   handling into CModule itself. See CHANGELOG.md.                |
-//+------------------------------------------------------------------+
 class CEngine : public CModule
 {
-public:
+private:
+   CEMAIndicator   *m_ema;
+   CATRIndicator   *m_atr;
+   CADXIndicator   *m_adx;
+   CBreakoutSignal *m_signal;
+   CRiskManager    *m_risk;
 
-   CEngine(const string name = "CEngine")
-      : CModule(name)
+public:
+   CEngine()
+      : CModule("CEngine")
    {
+      m_ema    = NULL;
+      m_atr    = NULL;
+      m_adx    = NULL;
+      m_signal = NULL;
+      m_risk   = NULL;
    }
 
-   // Extension point: override here once the engine has real
-   // per-tick orchestration logic (driving Trading/Risk/AI modules).
-   // For now, the inherited CModule::Update() behavior is sufficient.
-   virtual bool Update()
+   void SetIndicators(CEMAIndicator *ema,
+                      CATRIndicator *atr,
+                      CADXIndicator *adx)
    {
-      return CModule::Update();
+      m_ema = ema;
+      m_atr = atr;
+      m_adx = adx;
+   }
+
+   void SetSignal(CBreakoutSignal *signal)
+   {
+      m_signal = signal;
+   }
+
+   void SetRisk(CRiskManager *risk)
+   {
+      m_risk = risk;
+   }
+
+   virtual bool Initialize(CContext *context) override
+   {
+      if(!CModule::Initialize(context))
+         return false;
+
+      if(m_ema    == NULL ||
+         m_atr    == NULL ||
+         m_adx    == NULL ||
+         m_signal == NULL ||
+         m_risk   == NULL)
+         return false;
+
+      return true;
+   }
+
+   //--------------------------------------------------------------
+   // Update — the per‑tick pipeline
+   //--------------------------------------------------------------
+   virtual bool Update() override
+   {
+      if(!m_initialized)
+         return false;
+
+      // 1. Update all indicators (best-effort, no abort)
+      UpdateIndicators();
+
+      // 2. Evaluate signal (guards on snapshot.IsReady internally)
+      SSignalResult signal;
+      if(!EvaluateSignal(signal))
+         return false;
+
+      if(!signal.IsValid)
+         return true;   // no actionable signal
+
+      // 3. Evaluate risk
+      SRiskResult risk;
+      if(!EvaluateRisk(signal, risk))
+         return false;
+
+      if(!risk.IsAllowed)
+         return true;   // rejected — not an error
+
+      // 4. Execution placeholder (Stage 7)
+
+      return true;
+   }
+
+   virtual void Shutdown() override
+   {
+      m_ema    = NULL;
+      m_atr    = NULL;
+      m_adx    = NULL;
+      m_signal = NULL;
+      m_risk   = NULL;
+
+      CModule::Shutdown();
+   }
+
+private:
+   //--------------------------------------------------------------
+   // UpdateIndicators — runs all three; failures logged but not
+   // propagated. Signal module will detect missing data via
+   // snapshot.IsReady.
+   //--------------------------------------------------------------
+   void UpdateIndicators()
+   {
+      if(m_ema != NULL) m_ema.Update();
+      if(m_atr != NULL) m_atr.Update();
+      if(m_adx != NULL) m_adx.Update();
+   }
+
+   bool EvaluateSignal(SSignalResult &result)
+   {
+      if(m_signal == NULL) return false;
+      if(!m_signal.Update()) return false;
+      result = m_signal.GetResult();
+      return true;
+   }
+
+   bool EvaluateRisk(const SSignalResult &signal, SRiskResult &result)
+   {
+      if(m_risk == NULL) return false;
+      result = m_risk.Calculate(signal);
+      return true;
    }
 };
 
