@@ -3,11 +3,11 @@
 //| Module  : Trading                                                |
 //| File    : TradeExecutor.mqh                                      |
 //| Purpose : Executes market orders based on signal and risk        |
-//|           results. Uses MQL5 OrderSend and standard trade        |
-//|           request structures with embedded secondary position     |
-//|           guards.                                                |
+//|           results. Constructs SL/TP from current price and       |
+//|           risk distance (points), then sends order via           |
+//|           OrderSend with secondary position guard.               |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.6                                          |
+//| Version : 2.0.0-alpha.7                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_TRADING_TRADEEXECUTOR_MQH
 #define AI_SWINGBREAKOUT_TRADING_TRADEEXECUTOR_MQH
@@ -128,11 +128,25 @@ STradeResult CTradeExecutor::Execute(const SSignalResult &signal,
 
    request.volume = risk.LotSize;
 
+   // --- Construct stop loss and take profit from live price and risk distances ---
+   double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+   double sl    = 0.0;
+   double tp    = 0.0;
+
+   if(signal.Direction == TRADE_DIRECTION_BUY)
+   {
+      sl = request.price - risk.StopLossDistance   * point;
+      tp = request.price + risk.TakeProfitDistance * point;
+   }
+   else
+   {
+      sl = request.price + risk.StopLossDistance   * point;
+      tp = request.price - risk.TakeProfitDistance * point;
+   }
+
    int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-   if(risk.StopLoss > 0.0)
-      request.sl = NormalizeDouble(risk.StopLoss, digits);
-   if(risk.TakeProfit > 0.0)
-      request.tp = NormalizeDouble(risk.TakeProfit, digits);
+   if(risk.StopLossDistance   > 0.0) request.sl = NormalizeDouble(sl, digits);
+   if(risk.TakeProfitDistance > 0.0) request.tp = NormalizeDouble(tp, digits);
 
    MqlTradeResult tradeResult = {};
    ZeroMemory(tradeResult);
