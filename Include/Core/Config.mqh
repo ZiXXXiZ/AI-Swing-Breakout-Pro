@@ -25,11 +25,6 @@ enum ENUM_MARKET_REGIME
    REGIME_LOW_VOLATILITY
 };
 
-// Renamed from ENUM_LOG_LEVEL — that name and its members are already owned by
-// Include/Core/Logging/LogLevel.mqh, which Logger.mqh, LogRecord.mqh, and
-// DefaultLogFormatter.mqh all depend on. Declaring it again here under the same
-// name would cause an enum redefinition error the moment both files are ever
-// included together. See DECISIONS.md, ADR-012.
 enum ENUM_CONFIG_LOG_LEVEL
 {
    CONFIG_LOG_ERROR = 0,
@@ -74,6 +69,7 @@ struct STradeConfig
    bool UseBreakEven;
    bool UsePartialClose;
    bool UseATRTrailing;
+   int  MaxSlippagePoints;   // ADDED: slippage in points (1 pip = 10 points for 5-digit broker)
 };
 
 struct SFilterConfig
@@ -139,6 +135,7 @@ public:
       Trade.UseBreakEven         = true;
       Trade.UsePartialClose      = true;
       Trade.UseATRTrailing       = true;
+      Trade.MaxSlippagePoints    = 10;   // 10 points — 1 pip for 5-digit broker
 
       Filter.UseADX              = true;
       Filter.UseATR              = true;
@@ -170,6 +167,8 @@ public:
       if(Indicator.ATRPeriod < 1) return false;
       if(Indicator.ADXPeriod < 1) return false;
       if(Indicator.VolumeMAPeriod < 1) return false;
+
+      if(Trade.MaxSlippagePoints < 0) return false;   // ADDED
 
       return true;
    }

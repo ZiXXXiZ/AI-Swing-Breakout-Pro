@@ -3,62 +3,38 @@
 //| Module  : Core                                                   |
 //| File    : Logger.mqh                                             |
 //| Purpose : Central logging coordinator — manages configuration,   |
-//|           coordinates formatter/output, applies level filtering  |
+//|           coordinates formatter/output, applies level filtering, |
+//|           and exposes a simple Log() interface for modules.      |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.3                                          |
-//+------------------------------------------------------------------+
-//| Responsibilities                                                 |
-//|   - Manage logging configuration                                 |
-//|   - Coordinate formatter/output                                  |
-//|   - Apply log level filtering                                    |
-//|                                                                  |
-//| Does NOT                                                         |
-//|   - Format text                                                   |
-//|   - Print messages                                                |
-//|   - Own formatter/output objects                                  |
+//| Version : 2.0.0-alpha.7                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_CORE_LOGGER_MQH
 #define AI_SWINGBREAKOUT_CORE_LOGGER_MQH
 
 #include "../Base/BaseObject.mqh"
-
 #include "LogLevel.mqh"
 #include "LogRecord.mqh"
-
 #include "Interfaces/ILogFormatter.mqh"
 #include "Interfaces/ILogOutput.mqh"
 
-//+------------------------------------------------------------------+
-//| Logger                                                           |
-//+------------------------------------------------------------------+
 class CLogger : public CBaseObject
 {
 private:
-
    bool             m_enabled;
    ENUM_LOG_LEVEL   m_level;
-
    ILogFormatter   *m_formatter;
    ILogOutput      *m_output;
 
 public:
-
-   //---------------------------------------------------------------
-   // Constructor
-   //---------------------------------------------------------------
    CLogger()
       : CBaseObject("CLogger")
    {
       m_enabled  = true;
       m_level    = LOG_INFO;
-
       m_formatter = NULL;
       m_output    = NULL;
    }
 
-   //---------------------------------------------------------------
-   // Destructor
-   //---------------------------------------------------------------
    virtual ~CLogger()
    {
       Shutdown();
@@ -66,14 +42,6 @@ public:
 
    //---------------------------------------------------------------
    // Configure
-   // Renamed from a previous "Initialize(ILogFormatter*, ILogOutput*)"
-   // — that name collided with CBaseObject::Initialize() (no
-   // parameters). Different parameter lists don't override a base
-   // virtual method, they hide it as a separate overload; this is
-   // the exact same defect class found and fixed in Engine.mqh (see
-   // CHANGELOG.md). Renaming avoids the collision outright. Chains
-   // to CBaseObject::Initialize() at the end instead of manually
-   // setting m_initialized, consistent with every other module.
    //---------------------------------------------------------------
    bool Configure(
       ILogFormatter *formatter,
@@ -110,7 +78,6 @@ public:
       m_enabled = enable;
    }
 
-   //---------------------------------------------------------------
    bool IsEnabled() const
    {
       return m_enabled;
@@ -124,23 +91,55 @@ public:
       m_level = level;
    }
 
-   //---------------------------------------------------------------
    ENUM_LOG_LEVEL GetLevel() const
    {
       return m_level;
    }
 
-protected:
+   //---------------------------------------------------------------
+   // Log — Primary API
+   // Accepts a fully constructed SLogRecord. Caller populates all
+   // fields relevant to the event before passing here.
+   // Returns false silently if logging is disabled, not initialized,
+   // or level is filtered out.
+   //---------------------------------------------------------------
+   bool Log(const SLogRecord &record)
+   {
+      if(!m_enabled || !m_initialized)          return false;
+      if(record.Level > m_level)                return false;
+      if(m_formatter == NULL || m_output == NULL) return false;
+
+      string formatted = m_formatter.Format(record);
+      return m_output.Write(formatted);
+   }
 
    //---------------------------------------------------------------
-   // Helpers for Stage 2
+   // Log — Convenience Overload
+   // Constructs a minimal SLogRecord for standard system messages.
+   // Extended fields (Symbol, Ticket, ErrorCode, Function, Line,
+   // Timeframe) remain at their zero/empty defaults.
+   // Delegates to the primary API above.
    //---------------------------------------------------------------
+   bool Log(const ENUM_LOG_LEVEL level,
+            const string         module,
+            const string         message)
+   {
+      SLogRecord record;
+      ZeroMemory(record);
+      record.Timestamp = TimeCurrent();
+      record.Level     = level;
+      record.Module    = module;
+      record.Message   = message;
+
+      return this.Log(record);
+   }
+
+protected:
    ILogFormatter* Formatter() const
    {
       return m_formatter;
    }
 
-   //---------------------------------------------------------------
    ILogOutput* Output() const
    {
       return m_output;

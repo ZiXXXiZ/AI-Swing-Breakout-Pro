@@ -2,10 +2,7 @@
 //| Project : AI Swing Breakout Pro Framework                        |
 //| Module  : Framework                                              |
 //| File    : Engine.mqh                                             |
-//| Purpose : Top-level orchestration module. Owns non-owning        |
-//|           pointers to Indicators, Signal, Risk, Tracker and     |
-//|           Trade Executor modules, executing them in fixed        |
-//|           sequence each tick.                                    |
+//| Purpose : Top-level orchestration module with diagnostic prints   |
 //| Author  : ZiXXXiZ                                                |
 //| Version : 2.0.0-alpha.6                                          |
 //+------------------------------------------------------------------+
@@ -89,51 +86,91 @@ public:
          m_executor == NULL)
          return false;
 
+      if(!m_ema.Initialize(context))      return false;
+      if(!m_atr.Initialize(context))      return false;
+      if(!m_adx.Initialize(context))      return false;
+      if(!m_signal.Initialize(context))   return false;
+      if(!m_risk.Initialize(context))     return false;
+      if(!m_tracker.Initialize(context))  return false;
+      if(!m_executor.Initialize(context)) return false;
+
       return true;
    }
 
    //--------------------------------------------------------------
-   // Update — the per‑tick pipeline
+   // Update — the per‑tick pipeline (with diagnostics)
    //--------------------------------------------------------------
    virtual bool Update() override
    {
       if(!m_initialized)
          return false;
 
-      // 1. Update all indicators (best-effort, no abort)
+      // 1. Update all indicators
       UpdateIndicators();
 
-      // Primary Guard: Short-circuit if position already exists.
-      // Keeps indicators updating to maintain continuity for trailing/metrics,
-      // but prevents downstream execution logic from wasting processing cycle budget.
-      if(m_tracker != NULL && m_tracker.HasActivePosition())
+      // DIAG: Snapshot readiness — every 5 minutes in production
       {
-         return true; // Valid early exit state, not a framework error.
+         static datetime lastPrint = 0;
+         if(TimeCurrent() - lastPrint > 300)
+         {
+            PrintFormat("[DIAG] Snapshot.IsReady: %s",
+                        m_context.Snapshot().IsReady ? "YES" : "NO");
+            lastPrint = TimeCurrent();
+         }
       }
 
-      // 2. Evaluate signal (guards on snapshot.IsReady internally)
+      // Primary Guard: Short-circuit if position already exists
+      if(m_tracker != NULL && m_tracker.HasActivePosition())
+         return true;
+
+      // 2. Evaluate signal
       SSignalResult signal;
       if(!EvaluateSignal(signal))
          return false;
 
+      // DIAG: Signal result — every 5 minutes
+      {
+         static datetime lastPrint = 0;
+         if(TimeCurrent() - lastPrint > 300)
+         {
+            PrintFormat("[DIAG] Signal.IsValid: %s  Direction: %d  Probability: %.2f",
+                        signal.IsValid ? "YES" : "NO",
+                        signal.Direction,
+                        signal.Probability);
+            lastPrint = TimeCurrent();
+         }
+      }
+
       if(!signal.IsValid)
-         return true;   // no actionable signal
+         return true;
 
       // 3. Evaluate risk
       SRiskResult risk;
       if(!EvaluateRisk(signal, risk))
          return false;
 
+      // DIAG: Risk result — every 5 minutes
+      {
+         static datetime lastPrint = 0;
+         if(TimeCurrent() - lastPrint > 300)
+         {
+            PrintFormat("[DIAG] Risk.IsAllowed: %s  LotSize: %.2f  SL dist: %.0f pts  TP dist: %.0f pts",
+                        risk.IsAllowed ? "YES" : "NO",
+                        risk.LotSize,
+                        risk.StopLossDistance,
+                        risk.TakeProfitDistance);
+            lastPrint = TimeCurrent();
+         }
+      }
+
       if(!risk.IsAllowed)
-         return true;   // rejected — not an error
+         return true;
 
       // 4. Execute trade
       STradeResult trade;
       if(!EvaluateExecution(signal, risk, trade))
          return false;
 
-      // Execution failure is not a pipeline error — the executor
-      // already populated trade.Reason and trade.ErrorCode.
       return true;
    }
 
@@ -151,11 +188,6 @@ public:
    }
 
 private:
-   //--------------------------------------------------------------
-   // UpdateIndicators — runs all three; failures logged but not
-   // propagated. Signal module will detect missing data via
-   // snapshot.IsReady.
-   //--------------------------------------------------------------
    void UpdateIndicators()
    {
       if(m_ema != NULL) m_ema.Update();
@@ -178,11 +210,6 @@ private:
       return true;
    }
 
-   //--------------------------------------------------------------
-   // EvaluateExecution
-   // No pre‑call guards — CTradeExecutor::Execute() handles
-   // internal validation of signal.IsValid and risk.IsAllowed.
-   //--------------------------------------------------------------
    bool EvaluateExecution(const SSignalResult &signal,
                           const SRiskResult   &risk,
                           STradeResult        &result)

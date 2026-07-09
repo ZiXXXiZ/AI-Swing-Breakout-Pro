@@ -18,6 +18,7 @@
 #include "TradeResult.mqh"
 #include "../Core/Config.mqh"
 #include "../Core/Constants.mqh"
+#include "../Core/Logging/LogRecord.mqh"
 
 class CTradeExecutor : public CModule
 {
@@ -73,8 +74,17 @@ STradeResult CTradeExecutor::Execute(const SSignalResult &signal,
       return result;
    }
 
-   // Secondary Safety Guard: Direct terminal state verification loop
-   // Implements a decoupled defensive layer preventing redundant allocations
+   // ================================================================
+   // SECONDARY SAFETY GUARD — Defensive Assertion Layer
+   // ----------------------------------------------------------------
+   // This check is an intentional, decoupled duplicate of the primary
+   // filter in CEngine::Update(). It does NOT call CPositionTracker.
+   // Rationale: CTradeExecutor must be safe to call independently of
+   // engine wiring. If a future developer bypasses CEngine and calls
+   // Execute() directly, this guard protects live capital.
+   // If this fires, it is a critical architecture anomaly — a duplicate
+   // trade request has bypassed the primary performance filter.
+   // ================================================================
    int totalPositions = PositionsTotal();
    for(int i = 0; i < totalPositions; i++)
    {
@@ -113,7 +123,9 @@ STradeResult CTradeExecutor::Execute(const SSignalResult &signal,
    request.action    = TRADE_ACTION_DEAL;
    request.symbol    = _Symbol;
    request.magic     = MAGIC_NUMBER;   // global constant from Config.mqh
-   request.deviation = 10;             // 10 points slippage (1 pip for 5‑digit broker)
+
+   const CConfig *config = platform.Config();
+   request.deviation = (ulong)config.Trade.MaxSlippagePoints;   // from config
 
    if(signal.Direction == TRADE_DIRECTION_BUY)
    {
@@ -157,6 +169,19 @@ STradeResult CTradeExecutor::Execute(const SSignalResult &signal,
       result.Ticket    = tradeResult.order;
       result.ErrorCode = 0;
       result.Reason    = "";
+
+      SLogRecord record;
+      ZeroMemory(record);
+      record.Timestamp = TimeCurrent();
+      record.Level     = LOG_INFO;
+      record.Module    = "CTradeExecutor";
+      record.Symbol    = _Symbol;
+      record.Ticket    = result.Ticket;
+      record.Message   = StringFormat(
+         "Trade executed: Vol=%.2f, Price=%.5f, SL=%.5f, TP=%.5f",
+         request.volume, request.price, request.sl, request.tp);
+
+      m_context.Logger().Log(record);
    }
    else
    {
@@ -164,19 +189,20 @@ STradeResult CTradeExecutor::Execute(const SSignalResult &signal,
       result.Ticket    = 0;
       result.ErrorCode = GetLastError();
       result.Reason    = "OrderSend failed";
+
+      SLogRecord record;
+      ZeroMemory(record);
+      record.Timestamp = TimeCurrent();
+      record.Level     = LOG_ERROR;
+      record.Module    = "CTradeExecutor";
+      record.Symbol    = _Symbol;
+      record.ErrorCode = result.ErrorCode;
+      record.Message   = "OrderSend failed: " + result.Reason;
+
+      m_context.Logger().Log(record);
    }
 
    return result;
 }
-// ================================================================
-// SECONDARY SAFETY GUARD — Defensive Assertion Layer
-// ----------------------------------------------------------------
-// This check is an intentional, decoupled duplicate of the primary
-// filter in CEngine::Update(). It does NOT call CPositionTracker.
-// Rationale: CTradeExecutor must be safe to call independently of
-// engine wiring. If a future developer bypasses CEngine and calls
-// Execute() directly, this guard protects live capital.
-// If this fires, it is a critical architecture anomaly — a duplicate
-// trade request has bypassed the primary performance filter.
-// ================================================================
+
 #endif // AI_SWINGBREAKOUT_TRADING_TRADEEXECUTOR_MQH

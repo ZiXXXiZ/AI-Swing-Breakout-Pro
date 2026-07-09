@@ -189,11 +189,12 @@ double CRiskManager::CalculateLotSize(const double riskPercent,
    if(valuePerPoint <= 0.0)
       valuePerPoint = 10.0 * point; // approximate for majors
 
-   double stopLossPoints = stopLossPips * point * 10.0; // 1 pip = 10 points
+   // Fix: stopLossPoints is now pips * 10 (points), no point multiplication.
+   double stopLossPoints = stopLossPips * 10.0;   // pips → points (1 pip = 10 points)
    double lotSize = 0.0;
 
    if(stopLossPoints > 0.0)
-      lotSize = CMathUtils::SafeDivide(riskMoney, (valuePerPoint * stopLossPoints / point), 0.0);
+      lotSize = CMathUtils::SafeDivide(riskMoney, valuePerPoint * stopLossPoints, 0.0);
 
    return lotSize;
 }
