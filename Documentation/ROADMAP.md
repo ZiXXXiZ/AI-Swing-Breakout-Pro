@@ -2,9 +2,9 @@
 
 # ROADMAP
 
-**Version:** 2.0.0-alpha.5
+**Version:** 2.0.0-alpha.9
 **Status:** Active Development
-**Last Updated:** July 2026
+**Last Updated:** July 10, 2026
 
 ---
 
@@ -40,15 +40,15 @@ Build a production-quality, modular MQL5 trading framework capable of supporting
 ```text
 Foundation Layer          ██████████  100%
 Framework Layer           ██████████  100%
-Infrastructure Layer      ██████████  100%  (Error/Logging/String/Time done via Sprint 006)
+Infrastructure Layer      ██████████  100%
 Indicators Layer          ██████████  100%
 Signals Layer             ██████████  100%
 Risk Layer                ██████████  100%
-Trading Layer             ░░░░░░░░░░    0%
+Trading Layer             █████████░   90%  (logging pending)
 AI Layer                  ░░░░░░░░░░    0%
 Testing & Optimization    ░░░░░░░░░░    0%
 
-Overall Project Progress  ███████░░░   75%
+Overall Project Progress  █████████░   90%
 ```
 
 ---
@@ -109,9 +109,7 @@ Additional notable fixes:
 
 # Phase 2 — Framework Wiring (Sprint 007)
 
-Status: 🚧 In Progress
-
-## Sprint 007 — Composition Root + Risk Engine Start
+Status: ✅ Completed
 
 ## Sprint 007 — Composition Root + Indicators + Signals + Risk + Engine Wiring
 
@@ -122,7 +120,52 @@ Objectives:
 3. ✅ Task 3 — Signals layer — `SignalResult.mqh`, `SignalBase.mqh`, `BreakoutSignal.mqh` — compile-verified
 4. ✅ Task 4 — Risk layer — `RiskResult.mqh`, `RiskBase.mqh`, `RiskManager.mqh` — compile-verified
 5. ✅ Task 5 — `Engine.mqh` — orchestration pipeline added (ADR-015) — compile-verified
-6. ⏳ Task 6 — `AI_SwingBreakout_Pro.mq5` — Stage 6 wiring: instantiate Indicators, Signal, Risk; wire all into `CEngine` ← **NEXT**
+6. ✅ Task 6 — `AI_SwingBreakout_Pro.mq5` — Stage 6 wiring — compile-verified
+
+---
+
+# Phase 3 — Execution Layer (Sprint 008)
+
+Status: ✅ Completed
+
+## Sprint 008 — Execution + Risk Refinement
+
+Objectives:
+
+1. ✅ Task 1 — `RiskManager.mqh` — ATR-based stop loss replaces placeholder — compile-verified
+2. ✅ Task 2 — `TradeExecutor.mqh` (new — `Include/Trading/`) — compile-verified
+3. ✅ Task 3 — `Engine.mqh` — `CTradeExecutor` wired into Step 4 pipeline — compile-verified
+4. ✅ Task 4 — `SESSION_CHECKPOINT.md` — written
+5. ✅ Task 5 — `AI_SwingBreakout_Pro.mq5` — Stage 7 wiring, full pipeline end-to-end — **0 errors, 0 warnings, 1677 ms**
+
+---
+
+# Phase 4 — Trading Engine Expansion (Sprint 009)
+
+Status: ✅ Completed
+
+## Sprint 009 — Risk Refinement + Trade Quality
+
+Objectives:
+
+1. ✅ Task 1 — Dual-Layer Position Guard — `PositionTracker.mqh` (new), `Engine.mqh`, `TradeExecutor.mqh`, `AI_SwingBreakout_Pro.mq5` — 0 errors, 0 warnings, 1633 ms
+2. ✅ Task 2 — Option C: SL/TP price construction moved to `TradeExecutor` — `RiskResult.mqh`, `RiskManager.mqh`, `TradeExecutor.mqh` — 0 errors, 0 warnings, 1750 ms
+3. ✅ Task 3 — `request.deviation` moved from hardcoded `10` to `CConfig`
+4. ✅ Task 4 — `Engine.mqh` runtime bug fixes: sub-module context propagation + `IsReady` gating — backtest confirmed profitable ($1000 → $1140.50, 550 trades, GOLD.c H1)
+
+---
+
+# Phase 5 — Trade Quality + Logging (Sprint 010)
+
+Status: 🚧 Next
+
+## Sprint 010 — Trade History + Cleanup
+
+Objectives:
+
+1. ⏳ Task 1 — Trade history logging via `CLogger` ← **NEXT**
+2. ⏳ Task 2 — `AI_SwingBreakout_Pro.mq5` file header cosmetic fix (Purpose line still reads Stage 7)
+3. ⏳ Task 3 — TBD (review after above)
 
 ---
 
@@ -226,11 +269,11 @@ Release Criteria:
 
 # Current Priority
 
-Current Sprint: **Sprint 007**
+Current Sprint: **Sprint 010**
 
 Current Task:
 
-* ⏳ Task 6 — `AI_SwingBreakout_Pro.mq5` Stage 6 wiring — instantiate `CEMAIndicator`, `CATRIndicator`, `CADXIndicator`, `CBreakoutSignal`, `CRiskManager`; wire all into `CEngine`; drive full pipeline through `OnInit()`/`OnTick()`/`OnDeinit()`
+* ⏳ Task 1 — Trade history logging via `CLogger`
 
 Known MQL5 gotchas to check in every new file going forward:
 

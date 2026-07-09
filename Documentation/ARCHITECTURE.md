@@ -2,7 +2,7 @@
 
 ## ARCHITECTURE
 
-**Version:** 2.0.0-alpha.5
+**Version:** 2.0.0-alpha.7
 **Status:** Active Development
 **Last Updated:** July 2026
 
@@ -93,6 +93,11 @@ AI_SwingBreakout_Pro/
 │   │   ├── RiskBase.mqh
 │   │   └── RiskManager.mqh
 │   │
+│   ├── Trading/
+│   │   ├── TradeResult.mqh
+│   │   ├── TradeExecutor.mqh
+│   │   └── PositionTracker.mqh
+│   │
 │   └── Tests/
 │       ├── Core/
 │       │   └── Utilities/
@@ -108,7 +113,7 @@ AI_SwingBreakout_Pro/
 
 Note: `Utilities/` and `Error/` and `Logging/` exist nested inside `Core/`, not as separate top-level Include directories as earlier drafts of this document assumed. This document now reflects that nesting.
 
-Note: `Include/Trading/`, `Include/AI/`, and `Include/UI/` do not exist on disk yet — they are future module locations, covered under the Long-Term Roadmap (Section 13) and `ROADMAP.md` Phases 6–8, not part of the current confirmed tree.
+Note: `Include/AI/` and `Include/UI/` do not exist on disk yet — they are future module locations, covered under the Long-Term Roadmap (Section 13) and `ROADMAP.md` Phases 7–8, not part of the current confirmed tree. `Include/Trading/` exists and is confirmed.
 
 ---
 
@@ -412,16 +417,39 @@ Repository documentation must always reflect the current implementation. When do
 * `Signals/SignalBase.mqh`
 * `Signals/BreakoutSignal.mqh`
 
-## Risk Layer — Complete, Compiled Clean
+## Risk Layer — Complete, Compiled Clean (updated Sprint 009 Task 2)
 
-* `Risk/RiskResult.mqh`
+* `Risk/RiskResult.mqh` — `SRiskResult` now outputs `StopLossDistance` / `TakeProfitDistance` in points — execution-independent (Option C architecture)
 * `Risk/RiskBase.mqh`
-* `Risk/RiskManager.mqh`
+* `Risk/RiskManager.mqh` — computes lot size and SL/TP distances only; no absolute prices, no `SYMBOL_BID` read
+
+## Trading Layer — In Progress (Sprint 009)
+
+* `Trading/TradeResult.mqh` — `STradeResult` struct
+* `Trading/TradeExecutor.mqh` — owns price construction: `request.price`, `request.sl`, `request.tp` computed from live execution price + `SRiskResult` distances; dual-layer defensive guard
+* `Trading/PositionTracker.mqh` — `CPositionTracker`, symbol + magic filter
+
+## Composition Root — Stage 7, Sprint 009 Task 2 Complete
+
+* `AI_SwingBreakout_Pro.mq5` — full pipeline wired: Indicators → Signal → Risk → Execution
+* Compile-verified: 0 errors, 0 warnings, 1750 ms
+
+## Architectural Decision — Option C (Sprint 009 Task 2)
+
+Responsibility separation enforced:
+
+```text
+RiskManager   → exposure only (lot size, SL/TP distances in points, R:R)
+TradeExecutor → price construction (live Ask/Bid + distances → request.sl / request.tp)
+```
+
+`SRiskResult` is now execution-independent. `RiskManager` never reads `SYMBOL_BID` or `SYMBOL_ASK`.
 
 ## Not Yet Started
 
-* `AI_SwingBreakout_Pro.mq5` — Stage 6 wiring (Sprint 007, Task 6)
-* `Include/Trading/`, `Include/AI/`, `Include/UI/` — future phases
+* `Include/AI/`, `Include/UI/` — future phases
+* `request.deviation` move to `CConfig` — Sprint 009 Task 3
+* Trade history logging via `CLogger` — Sprint 009 Task 4
 
 ## Tests
 

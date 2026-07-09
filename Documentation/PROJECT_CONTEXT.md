@@ -2,9 +2,9 @@
 
 # PROJECT_CONTEXT
 
-**Version:** 2.0.0-alpha.5
+**Version:** 2.0.0-alpha.9
 **Status:** Active Development
-**Last Updated:** July 2026
+**Last Updated:** July 10, 2026
 
 ---
 
@@ -150,6 +150,10 @@ AI_SwingBreakout_Pro/
 │   │   ├── RiskResult.mqh
 │   │   ├── RiskBase.mqh
 │   │   └── RiskManager.mqh
+│   ├── Trading/
+│   │   ├── TradeResult.mqh
+│   │   ├── TradeExecutor.mqh
+│   │   └── PositionTracker.mqh
 │   └── Tests/
 │       ├── Core/Utilities/
 │       │   ├── TestStringUtils.ex5
@@ -229,10 +233,10 @@ Files inside `Include/` are unaffected — see ADR-012.
 
 ## Framework Layer — Complete
 
-* `Framework/Context.mqh` — `CMarketSnapshot` added this cycle (ADR-014)
+* `Framework/Context.mqh` — `CMarketSnapshot` added (ADR-014)
 * `Framework/Module.mqh`
 * `Framework/ModuleManager.mqh`
-* `Framework/Engine.mqh` — orchestration pipeline added this cycle (ADR-015)
+* `Framework/Engine.mqh` — sub-module context propagation fixed; `IsReady` gating added (Sprint 009)
 
 ## Indicators Layer — Complete
 
@@ -247,19 +251,31 @@ Files inside `Include/` are unaffected — see ADR-012.
 * `Signals/SignalBase.mqh`
 * `Signals/BreakoutSignal.mqh`
 
-## Risk Layer — Complete
+## Risk Layer — Complete (ATR-based SL/TP — Sprint 008)
 
 * `Risk/RiskResult.mqh`
 * `Risk/RiskBase.mqh`
-* `Risk/RiskManager.mqh`
+* `Risk/RiskManager.mqh` — ATR-based stop loss, 1:2 risk/reward TP
+
+## Risk Layer — Complete (Option C — Sprint 009 Task 2)
+
+* `Risk/RiskResult.mqh` — `StopLossDistance` / `TakeProfitDistance` in points; execution-independent
+* `Risk/RiskBase.mqh`
+* `Risk/RiskManager.mqh` — lot size + distances only; no absolute prices, no `SYMBOL_BID` read
+
+## Trading Layer — Complete (Sprint 009)
+
+* `Trading/TradeResult.mqh`
+* `Trading/TradeExecutor.mqh` — price construction from live execution price + distances; dual-layer defensive guard; `deviation` from `CConfig`
+* `Trading/PositionTracker.mqh` — symbol + magic filter
 
 ---
 
 # Known Issues
 
 * `Utilities/StringUtils.mqh` uses `ENUM_X`-style enum naming in one internal guard — low priority, no functional impact.
-* `RiskManager.mqh` uses `stopLossPips = 50.0` placeholder — ATR-based stop loss integration is a future task (Stage 7).
-* `AI_SwingBreakout_Pro.mq5` Stage 6 wiring not yet complete — composition root does not yet instantiate Indicators, Signal, Risk, or wire them into `CEngine`.
+* Trade history logging via `CLogger` not yet implemented — Sprint 010 backlog.
+* `AI_SwingBreakout_Pro.mq5` file header Purpose line still reads Stage 7 — cosmetic, next doc pass.
 
 ---
 
@@ -278,16 +294,18 @@ Every framework module follows:
 
 # Current Sprint
 
-Sprint 007 — Stage 6
+Sprint 009 — COMPLETE
 
-Objectives:
+1. ✅ Task 1 — Dual-Layer Position Guard — 0 errors, 0 warnings, 1633 ms
+2. ✅ Task 2 — Option C: SL/TP price construction moved to `TradeExecutor` — 0 errors, 0 warnings, 1750 ms
+3. ✅ Task 3 — `request.deviation` moved to `CConfig`
+4. ✅ Task 4 — `Engine.mqh` sub-module context propagation + `Snapshot.IsReady` gating — orders confirmed entering, backtest profitable ($1000 → $1140.50)
 
-1. ✅ Task 1 — `Context.mqh` — `CMarketSnapshot` added
-2. ✅ Task 2 — Indicators layer (Base, EMA, ATR, ADX)
-3. ✅ Task 3 — Signals layer (Result, Base, BreakoutSignal)
-4. ✅ Task 4 — Risk layer (Result, Base, RiskManager)
-5. ✅ Task 5 — `Engine.mqh` orchestration pipeline
-6. ⏳ Task 6 — `AI_SwingBreakout_Pro.mq5` Stage 6 wiring ← NEXT
+Sprint 010 — Not Started
+
+1. ⏳ Task 1 — Trade history logging via `CLogger`
+2. ⏳ Task 2 — `AI_SwingBreakout_Pro.mq5` header cosmetic fix (Stage 7 → correct label)
+3. ⏳ Task 3 — TBD (review ROADMAP.md)
 
 ---
 
@@ -320,13 +338,14 @@ Continue directly with the next planned task.
 Current Phase
 
 ```
-Indicators / Signals / Risk — complete. Wiring into main EA next.
+Sprint 009 complete. Full stack compiles and trades confirmed in backtest.
+Sprint 010 next — trade history logging and minor cleanup.
 ```
 
 Completion Estimate
 
 ```
-Approximately 75%
+Approximately 90%
 ```
 
 ---
@@ -356,6 +375,8 @@ Never assume prior chat history is available. Always continue from the current r
 7. `CLogger` uses `Configure()`, not `Initialize()`.
 8. `SymbolInfoString(_Symbol, SYMBOL_NAME)` is invalid — use `_Symbol` directly.
 9. `CValidationUtils::IsValidVolume()` signature is `(string symbol, double volume)` — symbol first.
+10. `CEngine::Initialize()` must call `Initialize(context)` on every sub-module — `CModule::Initialize()` only sets context on the engine itself, not on members it holds.
+11. `CMarketSnapshot.IsReady` is never set automatically — the engine must gate it explicitly after all indicator `Update()` calls succeed.
 
 ---
 
