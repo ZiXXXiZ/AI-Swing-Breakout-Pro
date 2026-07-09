@@ -3,9 +3,10 @@
 //| Module  : Risk                                                   |
 //| File    : RiskManager.mqh                                        |
 //| Purpose : Concrete risk manager — validates signals against      |
-//|           account limits and calculates position size.           |
+//|           account limits, calculates position size, and          |
+//|           outputs stop‑loss / take‑profit distances in points.   |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.4                                          |
+//| Version : 2.0.0-alpha.7                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_RISK_RISKMANAGER_MQH
 #define AI_SWINGBREAKOUT_RISK_RISKMANAGER_MQH
@@ -14,7 +15,6 @@
 #include "../Core/Platform.mqh"
 #include "../Core/Config.mqh"
 #include "../Core/MathUtils.mqh"
-#include "../Core/ValidationUtils.mqh"
 
 class CRiskManager : public CRiskBase
 {
@@ -55,11 +55,9 @@ bool CRiskManager::IsTradeAllowed() const
    if(platform == NULL)
       return false;
 
-   // Terminal trade permission
    if(!platform.IsTradeAllowed())
       return false;
 
-   // Daily loss check (even without a signal)
    if(!CheckDailyLoss())
       return false;
 
@@ -79,7 +77,6 @@ SRiskResult CRiskManager::Calculate(const SSignalResult &signal) const
       return result;
    }
 
-   // 1. Validate signal
    if(!signal.IsValid)
    {
       result.Reason = "Signal invalid";
@@ -100,46 +97,64 @@ SRiskResult CRiskManager::Calculate(const SSignalResult &signal) const
       return result;
    }
 
-   // 2. Probability threshold
    if(signal.Probability < cfg.Risk.ProbabilityThreshold)
    {
       result.Reason = "Probability below threshold";
       return result;
    }
 
-   // 3. Max positions
    if(!CheckMaxPositions())
    {
       result.Reason = "Max positions reached";
       return result;
    }
 
-   // 4. Daily loss
    if(!CheckDailyLoss())
    {
       result.Reason = "Daily loss limit reached";
       return result;
    }
 
-   // 5. Calculate lot size (we need stop loss pips; this could come from
-   //    ATR snapshot in a more advanced version. For now we'll assume a
-   //    default stop loss distance, or it could be read from a config value.
-   //    The RiskBase spec expects us to have a stop loss distance to pass.
-   //    We'll use a simple default of 50 pips for now; future tasks will
-   //    integrate ATR-based stops from the snapshot.
-   double stopLossPips = 50.0; // placeholder — will be ATR-based later
-   double lotSize = CalculateLotSize(cfg.Risk.RiskPercent, stopLossPips);
-
-   // 6. Validate lot size against broker symbol limits
-   lotSize = CMathUtils::RoundToStep(lotSize, SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP));
-
-   if(!CValidationUtils::IsValidVolume(_Symbol, lotSize))
+   // --- Determine stop loss distance (in pips) from ATR snapshot ---
+   double stopLossPips = 50.0; // fallback (safe for majors)
+   CMarketSnapshot *snap = m_context.Snapshot();
+   if(snap != NULL && snap.IsReady && snap.ATR > 0.0)
    {
-   result.Reason = "Lot size invalid for symbol";
-   return result;
+      double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      if(point > 0.0)
+      {
+         // ATR is in price units (e.g. 0.00120 for EURUSD).
+         // 1 pip = 10 points for a 5‑digit broker, so pips = ATR / point / 10.
+         stopLossPips = (snap.ATR / point) / 10.0;
+      }
    }
 
-   // 7. Final result
+   // --- Calculate lot size based on risk percent and stop distance ---
+   double lotSize = CalculateLotSize(cfg.Risk.RiskPercent, stopLossPips);
+
+   // --- Validate and normalize lot size ---
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double step   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+
+   if(minLot <= 0.0) minLot = 0.01;
+   if(maxLot <= 0.0) maxLot = 100.0;
+   if(step  <= 0.0) step  = 0.01;
+
+   lotSize = CMathUtils::Clamp(lotSize, minLot, maxLot);
+   lotSize = CMathUtils::RoundToStep(lotSize, step);
+
+   if(lotSize < minLot)
+   {
+      result.Reason = "Lot size below minimum";
+      return result;
+   }
+
+   // --- Output distances in points (execution layer handles prices) ---
+   // 1 pip = 10 points for 5‑digit broker, TP = 2× SL (1:2 risk/reward)
+   result.StopLossDistance   = stopLossPips * 10.0;
+   result.TakeProfitDistance = stopLossPips * 10.0 * 2.0;
+
    result.LotSize   = lotSize;
    result.IsAllowed = true;
    result.Reason    = "";
@@ -149,10 +164,6 @@ SRiskResult CRiskManager::Calculate(const SSignalResult &signal) const
 
 //+------------------------------------------------------------------+
 //| CalculateLotSize                                                 |
-//|   RiskPercent is a percentage of balance (e.g. 1.0 = 1%)         |
-//|   stopLossPips is the stop distance in pips (10 = 10 pips for    |
-//|   5-digit broker, 1 pip = 10 points).                            |
-//|   Returns raw lot size (unrounded).                              |
 //+------------------------------------------------------------------+
 double CRiskManager::CalculateLotSize(const double riskPercent,
                                       const double stopLossPips) const
@@ -167,28 +178,22 @@ double CRiskManager::CalculateLotSize(const double riskPercent,
    double balance  = platform.Balance();
    double riskMoney = CMathUtils::PercentOf(balance, riskPercent);
 
-   // Get tick value for the symbol (in account currency per lot per point)
    double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
    double tickSize  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
    double point     = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
 
-   // If broker reports tick value and size, calculate value per point
    double valuePerPoint = 0.0;
    if(tickSize > 0.0 && tickValue > 0.0)
       valuePerPoint = tickValue / tickSize * point;
 
-   // Fallback if tick data is unavailable: assume 1 lot = $10 per pip (forex)
    if(valuePerPoint <= 0.0)
-      valuePerPoint = 10.0 * point;   // approximate for major forex pairs
+      valuePerPoint = 10.0 * point; // approximate for majors
 
-   double stopLossPoints = stopLossPips * point * 10.0; // 1 pip = 10 points (5-digit)
+   double stopLossPoints = stopLossPips * point * 10.0; // 1 pip = 10 points
    double lotSize = 0.0;
 
    if(stopLossPoints > 0.0)
       lotSize = CMathUtils::SafeDivide(riskMoney, (valuePerPoint * stopLossPoints / point), 0.0);
-
-   // Alternative simpler formula if tick data not reliable:
-   // lotSize = riskMoney / (stopLossPips * 10.0); // approximate for $1/pip mini lots
 
    return lotSize;
 }
@@ -209,21 +214,11 @@ bool CRiskManager::CheckMaxPositions() const
    if(cfg == NULL)
       return false;
 
-   int maxPositions = cfg.Risk.MaxOpenPositions;
-
-   // PositionsTotal() includes all symbols — we assume all trades
-   // are on the current symbol for this EA.
-   int currentPositions = PositionsTotal();
-
-   return (currentPositions < maxPositions);
+   return (PositionsTotal() < cfg.Risk.MaxOpenPositions);
 }
 
 //+------------------------------------------------------------------+
 //| CheckDailyLoss                                                   |
-//|   Compares today's closed P&L against the max daily loss percent |
-//|   of starting balance. For simplicity we use the current balance |
-//|   vs. the day's starting balance; a more rigorous implementation |
-//|   would track start-of-day balance explicitly.                   |
 //+------------------------------------------------------------------+
 bool CRiskManager::CheckDailyLoss() const
 {
@@ -238,17 +233,14 @@ bool CRiskManager::CheckDailyLoss() const
    if(cfg == NULL)
       return false;
 
-   double balance        = platform.Balance();
-   double equity         = platform.Equity();
-   double maxLossPercent = cfg.Risk.MaxDailyLossPercent;
+   double balance = platform.Balance();
+   double equity  = platform.Equity();
 
-   // Approximate today's loss by comparing equity to balance.
-   // A real implementation would store start-of-day balance.
    double lossPercent = 0.0;
    if(balance > 0.0)
       lossPercent = ((balance - equity) / balance) * 100.0;
 
-   return (lossPercent < maxLossPercent);
+   return (lossPercent < cfg.Risk.MaxDailyLossPercent);
 }
 
 #endif // AI_SWINGBREAKOUT_RISK_RISKMANAGER_MQH
