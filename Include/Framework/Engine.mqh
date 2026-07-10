@@ -4,7 +4,7 @@
 //| File    : Engine.mqh                                             |
 //| Purpose : Top-level orchestration module with diagnostic prints   |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.6                                          |
+//| Version : 2.0.0-alpha.7                                          |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_FRAMEWORK_ENGINE_MQH
 #define AI_SWINGBREAKOUT_FRAMEWORK_ENGINE_MQH
@@ -72,10 +72,14 @@ public:
       m_executor = executor;
    }
 
+   //--------------------------------------------------------------
+   // Initialize — fixed to avoid inconsistent initialized state
+   //--------------------------------------------------------------
    virtual bool Initialize(CContext *context) override
    {
-      if(!CModule::Initialize(context))
-         return false;
+      if(context == NULL)      return false;
+      if(!context.IsValid())   return false;
+      m_context = context;
 
       if(m_ema      == NULL ||
          m_atr      == NULL ||
@@ -94,7 +98,7 @@ public:
       if(!m_tracker.Initialize(context))  return false;
       if(!m_executor.Initialize(context)) return false;
 
-      return true;
+      return CBaseObject::Initialize();
    }
 
    //--------------------------------------------------------------
@@ -190,9 +194,12 @@ public:
 private:
    void UpdateIndicators()
    {
-      if(m_ema != NULL) m_ema.Update();
-      if(m_atr != NULL) m_atr.Update();
-      if(m_adx != NULL) m_adx.Update();
+      bool emaOk = (m_ema != NULL) && m_ema.Update();
+      bool atrOk = (m_atr != NULL) && m_atr.Update();
+      bool adxOk = (m_adx != NULL) && m_adx.Update();
+
+      if(m_context != NULL)
+         m_context.Snapshot().IsReady = (emaOk && atrOk && adxOk);
    }
 
    bool EvaluateSignal(SSignalResult &result)
