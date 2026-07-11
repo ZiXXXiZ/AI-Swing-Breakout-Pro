@@ -4,14 +4,16 @@
 //| File    : TestSnapshotReady.mq5                                  |
 //| Purpose : Verifies CMarketSnapshot.IsReady transitions to true   |
 //|           after indicator warmup in the Strategy Tester.         |
+//|           Updated for Sprint 012 architecture.                   |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.10                                         |
+//| Version : 2.0.0-alpha.12                                         |
 //+------------------------------------------------------------------+
 #property copyright "ZiXXXiZ"
 #property version   "2.00"
 
 #include "../Framework/TestFramework.mqh"
 #include "../../Framework/Engine.mqh"
+#include "../../MarketData/MarketDataProvider.mqh"   // Sprint 012 addition
 #include "../../Core/Logging/DefaultLogFormatter.mqh"
 #include "../../Core/Logging/JournalLogOutput.mqh"
 
@@ -24,9 +26,10 @@ CErrorHandler       g_errorHandler;
 CContext            g_context;
 CEngine             g_engine;
 
-CEMAIndicator       g_ema(10, 50, PERIOD_CURRENT);
-CATRIndicator       g_atr(14, PERIOD_CURRENT);
-CADXIndicator       g_adx(14, PERIOD_CURRENT);
+CMarketDataProvider g_marketData(10, 50, 14, 14, PERIOD_CURRENT);
+CEMAIndicator       g_ema;
+CATRIndicator       g_atr;
+CADXIndicator       g_adx;
 CBreakoutSignal     g_signal;
 CRiskManager        g_risk;
 CTradeExecutor      g_executor;
@@ -98,6 +101,7 @@ int OnInit()
    }
 
    // Wire engine
+   g_engine.SetMarketData(GetPointer(g_marketData));   // Sprint 012 addition
    g_engine.SetIndicators(GetPointer(g_ema),
                           GetPointer(g_atr),
                           GetPointer(g_adx));
@@ -140,7 +144,6 @@ void OnTick()
             g_snapshotReadyBar = g_tickCount;
             Log(StringFormat("[PASS] Snapshot.IsReady = true on tick %d", g_tickCount));
          }
-         // else: stays true – no flicker test later
       }
       else
       {
