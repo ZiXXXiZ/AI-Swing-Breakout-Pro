@@ -5,7 +5,7 @@
 //| Purpose : Shared service locator — bundles Platform, Logger, and |
 //|           ErrorHandler for injection into Framework modules      |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.3                                          |
+//| Version : 2.0.0-alpha.11                                         |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_FRAMEWORK_CONTEXT_MQH
 #define AI_SWINGBREAKOUT_FRAMEWORK_CONTEXT_MQH
@@ -55,8 +55,9 @@ public:
    double          Spread;
    double          Volume;
 
-   // Validity flag — false until all indicators populated for current bar
-   bool            IsReady;
+   // Validity flags
+   bool            DataReady;   // set true by CMarketDataProvider when all raw fields are populated
+   bool            IsReady;     // set true by CEngine when all indicator business logic is complete
 
    CMarketSnapshot()
    {
@@ -69,6 +70,7 @@ public:
       TrendDirection = TREND_UNKNOWN;
       Spread         = 0.0;
       Volume         = 0.0;
+      DataReady      = false;
       IsReady        = false;
    }
 };
