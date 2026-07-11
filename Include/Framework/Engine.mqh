@@ -4,13 +4,14 @@
 //| File    : Engine.mqh                                             |
 //| Purpose : Top-level orchestration module with diagnostic prints   |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.7                                          |
+//| Version : 2.0.0-alpha.12                                         |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_FRAMEWORK_ENGINE_MQH
 #define AI_SWINGBREAKOUT_FRAMEWORK_ENGINE_MQH
 
 #include "Module.mqh"
 #include "Context.mqh"
+#include "../MarketData/MarketDataProvider.mqh"      // Sprint 012 addition
 #include "../Indicators/EMAIndicator.mqh"
 #include "../Indicators/ATRIndicator.mqh"
 #include "../Indicators/ADXIndicator.mqh"
@@ -22,25 +23,27 @@
 class CEngine : public CModule
 {
 private:
-   CEMAIndicator    *m_ema;
-   CATRIndicator    *m_atr;
-   CADXIndicator    *m_adx;
-   CBreakoutSignal  *m_signal;
-   CRiskManager     *m_risk;
-   CPositionTracker *m_tracker;
-   CTradeExecutor   *m_executor;
+   CEMAIndicator       *m_ema;
+   CATRIndicator       *m_atr;
+   CADXIndicator       *m_adx;
+   CBreakoutSignal     *m_signal;
+   CRiskManager        *m_risk;
+   CPositionTracker    *m_tracker;
+   CTradeExecutor      *m_executor;
+   CMarketDataProvider *m_marketData;   // Sprint 012 addition
 
 public:
    CEngine()
       : CModule("CEngine")
    {
-      m_ema      = NULL;
-      m_atr      = NULL;
-      m_adx      = NULL;
-      m_signal   = NULL;
-      m_risk     = NULL;
-      m_tracker  = NULL;
-      m_executor = NULL;
+      m_ema        = NULL;
+      m_atr        = NULL;
+      m_adx        = NULL;
+      m_signal     = NULL;
+      m_risk       = NULL;
+      m_tracker    = NULL;
+      m_executor   = NULL;
+      m_marketData = NULL;               // Sprint 012 addition
    }
 
    void SetIndicators(CEMAIndicator *ema,
@@ -72,6 +75,11 @@ public:
       m_executor = executor;
    }
 
+   void SetMarketData(CMarketDataProvider *marketData)   // Sprint 012 addition
+   {
+      m_marketData = marketData;
+   }
+
    //--------------------------------------------------------------
    // Initialize — fixed to avoid inconsistent initialized state
    //--------------------------------------------------------------
@@ -81,22 +89,25 @@ public:
       if(!context.IsValid())   return false;
       m_context = context;
 
-      if(m_ema      == NULL ||
-         m_atr      == NULL ||
-         m_adx      == NULL ||
-         m_signal   == NULL ||
-         m_risk     == NULL ||
-         m_tracker  == NULL ||
-         m_executor == NULL)
+      if(m_ema        == NULL ||
+         m_atr        == NULL ||
+         m_adx        == NULL ||
+         m_signal     == NULL ||
+         m_risk       == NULL ||
+         m_tracker    == NULL ||
+         m_executor   == NULL ||
+         m_marketData == NULL)   // Sprint 012 addition
          return false;
 
-      if(!m_ema.Initialize(context))      return false;
-      if(!m_atr.Initialize(context))      return false;
-      if(!m_adx.Initialize(context))      return false;
-      if(!m_signal.Initialize(context))   return false;
-      if(!m_risk.Initialize(context))     return false;
-      if(!m_tracker.Initialize(context))  return false;
-      if(!m_executor.Initialize(context)) return false;
+      // Order matters: market data must be initialized first so snapshot fields are available
+      if(!m_marketData.Initialize(context)) return false;   // Sprint 012 addition
+      if(!m_ema.Initialize(context))        return false;
+      if(!m_atr.Initialize(context))        return false;
+      if(!m_adx.Initialize(context))        return false;
+      if(!m_signal.Initialize(context))     return false;
+      if(!m_risk.Initialize(context))       return false;
+      if(!m_tracker.Initialize(context))    return false;
+      if(!m_executor.Initialize(context))   return false;
 
       return CBaseObject::Initialize();
    }
@@ -109,7 +120,11 @@ public:
       if(!m_initialized)
          return false;
 
-      // 1. Update all indicators
+      // 0. Acquire raw market data (Sprint 012 addition)
+      if(!m_marketData.Update())
+         return false;
+
+      // 1. Update all indicators (now read from snapshot)
       UpdateIndicators();
 
       // DIAG: Snapshot readiness — every 5 minutes in production
@@ -180,13 +195,14 @@ public:
 
    virtual void Shutdown() override
    {
-      m_ema      = NULL;
-      m_atr      = NULL;
-      m_adx      = NULL;
-      m_signal   = NULL;
-      m_risk     = NULL;
-      m_tracker  = NULL;
-      m_executor = NULL;
+      m_ema        = NULL;
+      m_atr        = NULL;
+      m_adx        = NULL;
+      m_signal     = NULL;
+      m_risk       = NULL;
+      m_tracker    = NULL;
+      m_executor   = NULL;
+      m_marketData = NULL;   // Sprint 012 addition
 
       CModule::Shutdown();
    }
