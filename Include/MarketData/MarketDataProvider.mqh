@@ -3,10 +3,10 @@
 //| Module  : MarketData                                             |
 //| File    : MarketDataProvider.mqh                                 |
 //| Purpose : Centralized market data acquisition — owns indicator   |
-//|           handles for EMA, ATR, ADX, populates the shared        |
-//|           CMarketSnapshot with raw values each tick.             |
+//|           handles for EMA, ATR, ADX, and Bollinger Bands,        |
+//|           populates the shared CMarketSnapshot each tick.        |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.11                                         |
+//| Version : 2.0.0-alpha.13                                         |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_MARKETDATA_MARKETDATAPROVIDER_MQH
 #define AI_SWINGBREAKOUT_MARKETDATA_MARKETDATAPROVIDER_MQH
@@ -21,18 +21,23 @@ private:
    int               m_slowEmaPeriod;
    int               m_atrPeriod;
    int               m_adxPeriod;
+   int               m_bbPeriod;
+   double            m_bbDeviation;
    ENUM_TIMEFRAMES   m_timeframe;
 
    int               m_handleFastEMA;
    int               m_handleSlowEMA;
    int               m_handleATR;
    int               m_handleADX;
+   int               m_handleBB;
 
 public:
    CMarketDataProvider(const int fastEmaPeriod,
                        const int slowEmaPeriod,
                        const int atrPeriod,
                        const int adxPeriod,
+                       const int bbPeriod,
+                       const double bbDeviation,
                        const ENUM_TIMEFRAMES timeframe = PERIOD_CURRENT)
       : CModule("CMarketDataProvider")
    {
@@ -40,12 +45,15 @@ public:
       m_slowEmaPeriod = slowEmaPeriod;
       m_atrPeriod     = atrPeriod;
       m_adxPeriod     = adxPeriod;
+      m_bbPeriod      = bbPeriod;
+      m_bbDeviation   = bbDeviation;
       m_timeframe     = timeframe;
 
       m_handleFastEMA = INVALID_HANDLE;
       m_handleSlowEMA = INVALID_HANDLE;
       m_handleATR     = INVALID_HANDLE;
       m_handleADX     = INVALID_HANDLE;
+      m_handleBB      = INVALID_HANDLE;
    }
 
    virtual bool Initialize(CContext *context) override;
@@ -61,7 +69,6 @@ bool CMarketDataProvider::Initialize(CContext *context)
    if(!CModule::Initialize(context))
       return false;
 
-   // Create handles — must be done after chart attachment (gotcha #6)
    m_handleFastEMA = iMA(_Symbol, m_timeframe, m_fastEmaPeriod, 0, MODE_EMA, PRICE_CLOSE);
    if(m_handleFastEMA == INVALID_HANDLE) { Shutdown(); return false; }
 
@@ -73,6 +80,18 @@ bool CMarketDataProvider::Initialize(CContext *context)
 
    m_handleADX = iADX(_Symbol, m_timeframe, m_adxPeriod);
    if(m_handleADX == INVALID_HANDLE) { Shutdown(); return false; }
+
+   // Bollinger Bands
+   m_handleBB = iBands(_Symbol, m_timeframe, m_bbPeriod, 0, m_bbDeviation, PRICE_CLOSE);  
+   if(m_handleBB == INVALID_HANDLE)
+   {
+      if(m_context != NULL && m_context.Logger() != NULL)
+         m_context.Logger().Log(LOG_ERROR,
+                                "CMarketDataProvider::Initialize — iBands handle creation failed",
+                                "CMarketDataProvider");
+      Shutdown();
+      return false;
+   }
 
    return true;
 }
@@ -89,7 +108,6 @@ bool CMarketDataProvider::Update()
    if(snap == NULL)
       return false;
 
-   // Reset readiness flags for new tick
    snap.IsReady   = false;
    snap.DataReady = false;
 
@@ -101,27 +119,26 @@ bool CMarketDataProvider::Update()
    ArraySetAsSeries(bufPlusDI, true);
    ArraySetAsSeries(bufMinusDI, true);
 
+   double bufBBMiddle[], bufBBUpper[], bufBBLower[];
+   ArraySetAsSeries(bufBBMiddle, true);
+   ArraySetAsSeries(bufBBUpper, true);
+   ArraySetAsSeries(bufBBLower, true);
+
    bool success = true;
 
    // Fast EMA
-   if(CopyBuffer(m_handleFastEMA, 0, 0, 1, bufFast) < 1)
-      success = false;
-   else
-      snap.FastEMA = bufFast[0];
+   if(CopyBuffer(m_handleFastEMA, 0, 0, 1, bufFast) < 1) success = false;
+   else snap.FastEMA = bufFast[0];
 
    // Slow EMA
-   if(CopyBuffer(m_handleSlowEMA, 0, 0, 1, bufSlow) < 1)
-      success = false;
-   else
-      snap.SlowEMA = bufSlow[0];
+   if(CopyBuffer(m_handleSlowEMA, 0, 0, 1, bufSlow) < 1) success = false;
+   else snap.SlowEMA = bufSlow[0];
 
    // ATR
-   if(CopyBuffer(m_handleATR, 0, 0, 1, bufATR) < 1)
-      success = false;
-   else
-      snap.ATR = bufATR[0];
+   if(CopyBuffer(m_handleATR, 0, 0, 1, bufATR) < 1) success = false;
+   else snap.ATR = bufATR[0];
 
-   // ADX (three buffers: 0=ADX, 1=+DI, 2=-DI)
+   // ADX
    if(CopyBuffer(m_handleADX, 0, 0, 1, bufADX) < 1 ||
       CopyBuffer(m_handleADX, 1, 0, 1, bufPlusDI) < 1 ||
       CopyBuffer(m_handleADX, 2, 0, 1, bufMinusDI) < 1)
@@ -133,7 +150,17 @@ bool CMarketDataProvider::Update()
       snap.MinusDI = bufMinusDI[0];
    }
 
-   // Spread and Volume (no handle needed)
+   // Bollinger Bands – buffers: 0=middle, 1=upper, 2=lower
+   if(CopyBuffer(m_handleBB, 0, 0, 1, bufBBMiddle) < 1) success = false;
+   else snap.BBMiddle = bufBBMiddle[0];
+
+   if(CopyBuffer(m_handleBB, 1, 0, 1, bufBBUpper) < 1) success = false;
+   else snap.BBUpper = bufBBUpper[0];
+
+   if(CopyBuffer(m_handleBB, 2, 0, 1, bufBBLower) < 1) success = false;
+   else snap.BBLower = bufBBLower[0];
+
+   // Spread and Volume
    snap.Spread = (double)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
    snap.Volume = (double)iVolume(_Symbol, m_timeframe, 0);
 
@@ -151,6 +178,7 @@ void CMarketDataProvider::Shutdown()
    if(m_handleSlowEMA != INVALID_HANDLE) { IndicatorRelease(m_handleSlowEMA); m_handleSlowEMA = INVALID_HANDLE; }
    if(m_handleATR     != INVALID_HANDLE) { IndicatorRelease(m_handleATR);     m_handleATR     = INVALID_HANDLE; }
    if(m_handleADX     != INVALID_HANDLE) { IndicatorRelease(m_handleADX);     m_handleADX     = INVALID_HANDLE; }
+   if(m_handleBB      != INVALID_HANDLE) { IndicatorRelease(m_handleBB);      m_handleBB      = INVALID_HANDLE; }
 
    CModule::Shutdown();
 }
