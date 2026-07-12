@@ -1,110 +1,11 @@
 ﻿//+------------------------------------------------------------------+
 //| Project : AI Swing Breakout Pro Framework                        |
 //| File    : AI_SwingBreakout_Pro.mq5                               |
-//| Purpose : Composition Root — Stage 7: Full pipeline wired with   |
-//|           MarketDataProvider for centralized data acquisition.   |
+//| Purpose : Composition Root — Phase 9b: Full pipeline with        |
+//|           MarketData, Indicators, Bollinger Bands, Analysis,     |
+//|           Signal, Risk, Execution, and reserved Basket Manager.  |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.12                                         |
-//+------------------------------------------------------------------+
-//| Verified interfaces (read from actual source before writing):    |
-//|                                                                  |
-//| CPlatform                                                        |
-//|   Initialize()       → bool                                      |
-//|   Shutdown()         → void                                      |
-//|   TerminalName()     → string                                    |
-//|   TerminalBuild()    → long                                      |
-//|   IsTradeAllowed()   → bool                                      |
-//|   Balance()          → double                                    |
-//|   IsDemo()           → bool                                      |
-//|   IsTester()         → bool                                      |
-//|   ProjectName()      → string                                    |
-//|   Version()          → string                                    |
-//|   Build()            → int                                       |
-//|                                                                  |
-//| CLogger                                                          |
-//|   Configure(ILogFormatter*, ILogOutput*) → bool                  |
-//|   Shutdown()         → void                                      |
-//|   IsInitialized()    → bool                                      |
-//|   NOTE: NO Initialize() — use Configure() only                   |
-//|                                                                  |
-//| CErrorHandler                                                    |
-//|   Clear()            → void                                      |
-//|   SetError(...)      → void                                      |
-//|   HasError()         → bool                                      |
-//|   GetLastError()     → SErrorInfo                                |
-//|   NOTE: NO Initialize() or Shutdown()                            |
-//|                                                                  |
-//| CContext                                                         |
-//|   SetPlatform(CPlatform*)          → void                        |
-//|   SetLogger(CLogger*)              → void                        |
-//|   SetErrorHandler(CErrorHandler*)  → void                        |
-//|   IsValid()                        → bool                        |
-//|   Snapshot()                       → CMarketSnapshot*            |
-//|                                                                  |
-//| CModuleManager                                                   |
-//|   SetContext(CContext*)  → void                                   |
-//|   Register(CModule*)     → bool                                   |
-//|   Initialize()           → bool                                   |
-//|   Update()               → void                                   |
-//|   Shutdown()             → void                                   |
-//|   Count()                → int                                    |
-//|                                                                  |
-//| CEngine                                                          |
-//|   SetMarketData(CMarketDataProvider*) → void                      |
-//|   SetIndicators(CEMAIndicator*, CATRIndicator*, CADXIndicator*)  |
-//|                           → void                                  |
-//|   SetSignal(CBreakoutSignal*)  → void                             |
-//|   SetRisk(CRiskManager*)       → void                             |
-//|   SetPositionTracker(CPositionTracker*) → void                    |
-//|   SetExecutor(CTradeExecutor*) → void                             |
-//|   Initialize(CContext*)        → bool                             |
-//|   Update()                     → bool                             |
-//|   Shutdown()                   → void                             |
-//|   Context()                    → const CContext*                  |
-//|   IsInitialized()              → bool                             |
-//|                                                                  |
-//| CMarketDataProvider(fastEma, slowEma, atrPeriod, adxPeriod, tf)  |
-//|   Initialize(CContext*) → bool                                    |
-//|   Update()              → bool                                    |
-//|   Shutdown()            → void                                    |
-//|                                                                  |
-//| CEMAIndicator()                                                  |
-//|   Initialize(CContext*) → bool                                    |
-//|   Update()              → bool                                    |
-//|   Shutdown()            → void                                    |
-//|   IsReady()             → bool                                    |
-//|                                                                  |
-//| CATRIndicator()                                                  |
-//|   Initialize(CContext*) → bool                                    |
-//|   Update()              → bool                                    |
-//|   Shutdown()            → void                                    |
-//|   IsReady()             → bool                                    |
-//|                                                                  |
-//| CADXIndicator()                                                  |
-//|   Initialize(CContext*) → bool                                    |
-//|   Update()              → bool                                    |
-//|   Shutdown()            → void                                    |
-//|   IsReady()             → bool                                    |
-//|                                                                  |
-//| CBreakoutSignal()                                                |
-//|   Initialize(CContext*) → bool                                    |
-//|   Update()              → bool                                    |
-//|   GetResult()           → SSignalResult                           |
-//|                                                                  |
-//| CRiskManager()                                                   |
-//|   Initialize(CContext*) → bool                                    |
-//|   Calculate(SSignalResult&) → SRiskResult                         |
-//|   IsTradeAllowed()      → bool                                    |
-//|                                                                  |
-//| CTradeExecutor()                                                 |
-//|   Initialize(CContext*)                    → bool                 |
-//|   Execute(SSignalResult&, SRiskResult&)    → STradeResult         |
-//|   Shutdown()                               → void                 |
-//|                                                                  |
-//| CPositionTracker()                                               |
-//|   Initialize(CContext*)   → bool                                  |
-//|   HasActivePosition()     → bool (const)                          |
-//|   Shutdown()              → void                                  |
+//| Version : 2.0.0-alpha.13                                         |
 //+------------------------------------------------------------------+
 #property copyright "ZiXXXiZ"
 #property version   "2.00"
@@ -136,6 +37,8 @@
 #include "Include/Indicators/EMAIndicator.mqh"
 #include "Include/Indicators/ATRIndicator.mqh"
 #include "Include/Indicators/ADXIndicator.mqh"
+#include "Include/Indicators/BollingerBands.mqh"          // Phase 9b addition
+#include "Include/Analysis/SRDetector.mqh"               // Phase 9b addition
 #include "Include/Signals/BreakoutSignal.mqh"
 #include "Include/Risk/RiskManager.mqh"
 
@@ -148,29 +51,34 @@
 //------------------------------------------------------------------
 // EA input parameters
 //------------------------------------------------------------------
-input int    InpFastEMA   = 10;    // Fast EMA period
-input int    InpSlowEMA   = 50;    // Slow EMA period
-input int    InpATRPeriod = 14;    // ATR period
-input int    InpADXPeriod = 14;    // ADX period
+input int    InpFastEMA       = 10;    // Fast EMA period
+input int    InpSlowEMA       = 50;    // Slow EMA period
+input int    InpATRPeriod     = 14;    // ATR period
+input int    InpADXPeriod     = 14;    // ADX period
+input int    InpBBPeriod      = 20;    // Bollinger Bands period
+input double InpBBDeviation   = 2.0;   // Bollinger Bands deviation
 
 //------------------------------------------------------------------
-// Global objects
+// Global objects (stack‑allocated, non‑owning where appropriate)
 //------------------------------------------------------------------
-CPlatform       g_platform;
-CLogger         g_logger;
-CErrorHandler   g_errorHandler;
-CContext        g_context;
-CModuleManager  g_manager;
-CEngine         g_engine;
+CPlatform            g_platform;
+CLogger              g_logger;
+CErrorHandler        g_errorHandler;
+CContext             g_context;
+CModuleManager       g_manager;
+CEngine              g_engine;
 
-CMarketDataProvider g_marketData(InpFastEMA, InpSlowEMA, InpATRPeriod, InpADXPeriod, PERIOD_CURRENT);
-CEMAIndicator       g_ema;
-CATRIndicator       g_atr;
-CADXIndicator       g_adx;
-CBreakoutSignal     g_signal;
-CRiskManager        g_risk;
-CTradeExecutor      g_executor;
-CPositionTracker    g_tracker;
+CMarketDataProvider  g_marketData(InpFastEMA, InpSlowEMA, InpATRPeriod, InpADXPeriod,
+                                  InpBBPeriod, InpBBDeviation, PERIOD_CURRENT);
+CEMAIndicator        g_ema;
+CATRIndicator        g_atr;
+CADXIndicator        g_adx;
+CBollingerBands      g_bollingerBands;          // Phase 9b
+CSRDetector          g_srDetector;              // Phase 9b
+CBreakoutSignal      g_signal;
+CRiskManager         g_risk;
+CTradeExecutor       g_executor;
+CPositionTracker     g_tracker;
 
 CDefaultLogFormatter *g_formatter = NULL;
 CJournalLogOutput    *g_output    = NULL;
@@ -200,7 +108,7 @@ void InitFailedCleanup()
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   Log("=== AI Swing Breakout Pro — Stage 7 Init ===");
+   Log("=== AI Swing Breakout Pro — Phase 9b Init ===");
 
    //---------------------------------------------------------------
    // Stage 1 — Platform
@@ -274,18 +182,20 @@ int OnInit()
    Log("OK — Context valid (Platform + Logger + ErrorHandler)");
 
    //---------------------------------------------------------------
-   // Stage 5 — Wire Engine
+   // Stage 5 — Wire Engine (Phase 9b extensions)
    //---------------------------------------------------------------
    g_engine.SetMarketData(GetPointer(g_marketData));
    g_engine.SetIndicators(GetPointer(g_ema),
                           GetPointer(g_atr),
                           GetPointer(g_adx));
+   g_engine.SetBollingerBands(GetPointer(g_bollingerBands));   // Phase 9b
+   g_engine.SetAnalysis(GetPointer(g_srDetector));             // Phase 9b
    g_engine.SetSignal(GetPointer(g_signal));
    g_engine.SetRisk(GetPointer(g_risk));
    g_engine.SetExecutor(GetPointer(g_executor));
    g_engine.SetPositionTracker(GetPointer(g_tracker));
 
-   Log("OK — Engine wired (MarketData + EMA + ATR + ADX + Signal + Risk + Executor + Tracker)");
+   Log("OK — Engine wired (MarketData + EMA + ATR + ADX + BB + SRDetector + Signal + Risk + Executor + Tracker)");
 
    //---------------------------------------------------------------
    // Stage 6 — ModuleManager + Register only CEngine
@@ -322,7 +232,7 @@ int OnInit()
 
    Log("OK — Engine.Context() valid");
 
-   Log("=== Stage 7 Init Complete ===");
+   Log("=== Phase 9b Init Complete ===");
    Log("Framework: "
        + g_platform.ProjectName()
        + " v" + g_platform.Version()
@@ -344,7 +254,7 @@ void OnTick()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
-   Log("=== Stage 7 Deinit (reason=" + IntegerToString(reason) + ") ===");
+   Log("=== Phase 9b Deinit (reason=" + IntegerToString(reason) + ") ===");
 
    g_manager.Shutdown();
    Log("OK — Manager shutdown");
@@ -358,6 +268,6 @@ void OnDeinit(const int reason)
    if(g_formatter != NULL) { delete g_formatter; g_formatter = NULL; }
    if(g_output    != NULL) { delete g_output;    g_output    = NULL; }
 
-   Print("[AISBP] Stage 7 shutdown complete.");
+   Print("[AISBP] Phase 9b shutdown complete.");
 }
 //+------------------------------------------------------------------+
