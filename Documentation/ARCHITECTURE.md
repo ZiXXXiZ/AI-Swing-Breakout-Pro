@@ -1,509 +1,1048 @@
 # AI Swing Breakout Pro Framework
 
-## ARCHITECTURE
+# ARCHITECTURE
 
-**Version:** 2.0.0-alpha.7
+**Version:** 2.0.0-alpha.13
 **Status:** Active Development
-**Last Updated:** July 2026
+**Last Updated:** July 12, 2026
 
 ---
 
-# 1. Overview
+# Purpose
 
-AI Swing Breakout Pro is a modular MQL5 trading framework designed around clean architecture principles.
+This document defines the high-level architecture of the AI Swing Breakout Pro framework.
 
-The framework separates infrastructure, business logic, trading logic, indicators, AI, utilities, and tests into independent modules with clear dependencies.
+It describes the framework layers, subsystem responsibilities, dependency rules, lifecycle, and communication boundaries.
 
-Design goals:
+Implementation details belong in the source code.
 
-* Modular
-* Reusable
-* Testable
-* Production-ready
-* Low coupling
-* High cohesion
+Architectural decisions belong in `DECISIONS.md`.
+
+This document describes **how the framework is organized**.
 
 ---
 
-# 2. Project Structure (Actual, Reconciled July 2026)
+# Architecture Principles
 
-The structure below was verified against an actual export of the repository and replaces the previous, aspirational-only structure.
+The framework follows several core principles.
+
+* Layered architecture
+* Single responsibility
+* Dependency inversion
+* Composition over inheritance
+* Non-owning service references
+* Deterministic execution pipeline
+* Documentation-first development
+
+Every module has a clearly defined responsibility.
+
+Dependencies always point downward.
+
+No circular dependencies are permitted.
+
+---
+
+# High-Level Architecture
 
 ```text
-AI_SwingBreakout_Pro/
-│
-├── AI_SwingBreakout_Pro.mq5   ← main EA entry point (root, sibling of Include/ — see Section 7)
-│
-├── Documentation/
-│
-├── Include/
-│   │
-│   ├── Core/
-│   │   ├── Base/
-│   │   │   └── BaseObject.mqh
-│   │   ├── Config.mqh
-│   │   ├── Constants.mqh
-│   │   ├── Error/
-│   │   │   ├── ErrorCodes.mqh
-│   │   │   ├── ErrorHandler.mqh
-│   │   │   ├── ErrorInfo.mqh
-│   │   │   └── TestErrorHandler.mqh
-│   │   ├── InputParameters.mqh
-│   │   ├── Logging/
-│   │   │   ├── DefaultLogFormatter.mqh
-│   │   │   ├── Interfaces/
-│   │   │   │   ├── ILogFormatter.mqh
-│   │   │   │   └── ILogOutput.mqh
-│   │   │   ├── JournalLogOutput.mqh
-│   │   │   ├── LogLevel.mqh
-│   │   │   ├── LogRecord.mqh
-│   │   │   └── Logger.mqh
-│   │   ├── MathUtils.mqh
-│   │   ├── Structures/
-│   │   │   ├── AccountStructures.mqh
-│   │   │   ├── MarketStructures.mqh
-│   │   │   ├── RiskStructures.mqh
-│   │   │   ├── StatisticsStructures.mqh
-│   │   │   └── TradeStructures.mqh
-│   │   ├── Types.mqh
-│   │   ├── Utilities/
-│   │   │   ├── StringUtils.mqh
-│   │   │   └── TimeUtils.mqh
-│   │   └── Version.mqh
-│   │
-│   ├── Framework/
-│   │   ├── Context.mqh
-│   │   ├── Module.mqh
-│   │   ├── ModuleManager.mqh
-│   │   └── Engine.mqh
-│   │
-│   ├── Indicators/
-│   │   ├── IndicatorBase.mqh
-│   │   ├── EMAIndicator.mqh
-│   │   ├── ATRIndicator.mqh
-│   │   └── ADXIndicator.mqh
-│   │
-│   ├── Signals/
-│   │   ├── SignalResult.mqh
-│   │   ├── SignalBase.mqh
-│   │   └── BreakoutSignal.mqh
-│   │
-│   ├── Risk/
-│   │   ├── RiskResult.mqh
-│   │   ├── RiskBase.mqh
-│   │   └── RiskManager.mqh
-│   │
-│   ├── Trading/
-│   │   ├── TradeResult.mqh
-│   │   ├── TradeExecutor.mqh
-│   │   └── PositionTracker.mqh
-│   │
-│   └── Tests/
-│       ├── Core/
-│       │   └── Utilities/
-│       │       ├── TestStringUtils.ex5
-│       │       └── TestStringUtils.mq5
-│       └── Framework/
-│           └── TestFramework.mqh
-│
-├── Source/
-├── Tests/
-└── Resources/
++---------------------------------------------------------+
+|              AI_SwingBreakout_Pro.mq5                   |
+|             (Composition Root / EA)                     |
++-------------------------------+-------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                        Framework                        |
+|              CContext / CModule / CModuleManager        |
+|                          CEngine                        |
++---------------------------------------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                       MarketData                        |
+|                   CMarketDataProvider                   |
+|              (owns all MT5 handles + CopyBuffer)        |
++---------------------------------------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                       Indicators                        |
+|         CEMAIndicator / CATRIndicator / CADXIndicator   |
+|                CBollingerBands [Phase 9b]               |
++---------------------------------------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                    Analysis [NEW — Phase 9b]            |
+|                        CSRDetector                      |
++---------------------------------------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                        Signals                          |
+|                     CBreakoutSignal                     |
++---------------------------------------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                         Risk                            |
+|                      CRiskManager                       |
+|                   CGridRisk [Phase 9b]                  |
++---------------------------------------------------------+
+                                |
+                                v
++---------------------------------------------------------+
+|                        Trading                          |
+|    CTradeExecutor / CPositionTracker / CTradeResult     |
+|          CBasketManager [Phase 9b]                      |
++---------------------------------------------------------+
 ```
-
-Note: `Utilities/` and `Error/` and `Logging/` exist nested inside `Core/`, not as separate top-level Include directories as earlier drafts of this document assumed. This document now reflects that nesting.
-
-Note: `Include/AI/` and `Include/UI/` do not exist on disk yet — they are future module locations, covered under the Long-Term Roadmap (Section 13) and `ROADMAP.md` Phases 7–8, not part of the current confirmed tree. `Include/Trading/` exists and is confirmed.
 
 ---
 
-# 3. Architecture Layers
+# Layer Responsibilities
 
-```text
-Application
-        │
-        ▼
-Trading Engine
-        │
-        ▼
-Risk Engine
-        │
-        ▼
-Indicators
-        │
-        ▼
-Core Services
-        │
-        ▼
-Platform (MQL5)
-```
+## Composition Root
 
-Each layer only depends on lower layers.
+The Expert Advisor (`AI_SwingBreakout_Pro.mq5`) is the composition root.
 
-Higher layers never become dependencies of lower layers.
+Responsibilities include:
+
+* Creating framework objects
+* Constructing modules
+* Wiring dependencies
+* Injecting shared services
+* Registering modules
+* Driving lifecycle events
+* Receiving MetaTrader events
+
+The composition root owns object lifetimes.
+
+Framework modules do not create each other.
 
 ---
 
-# 4. Core Module
+## Framework Layer
 
-The Core module is the foundation of the framework.
+The Framework layer coordinates the entire application.
 
-Everything else depends on Core.
+Primary components:
 
-Actual current layout:
+* `CContext`
+* `CModule`
+* `CModuleManager`
+* `CEngine`
 
-```text
-Core
-│
-├── Base            (CBaseObject — minimal base type, no logger/config/trading dependency)
-├── Config           (global configuration enums/validation)
-├── Constants
-├── Error             (error codes, structured error info, error handler)
-├── InputParameters
-├── Logging          (Logger, LogLevel, LogRecord, formatters, outputs, interfaces)
-├── MathUtils
-├── Structures
-├── Types
-├── Utilities        (StringUtils, TimeUtils)
-└── Version
-```
+The Framework layer contains orchestration logic only.
+
+It does not contain trading strategy logic.
+
+---
+
+## CContext
+
+`CContext` provides shared framework services.
+
+Current shared services:
+
+* `CPlatform`
+* `CLogger`
+* `CErrorHandler`
+* `CMarketSnapshot`
+* `CAnalysisSnapshot` [Phase 9b]
+
+`CContext` is non-owning.
+
+It stores references to shared services but does not allocate or destroy them.
+
+Modules receive access to shared services through `CContext`.
+
+---
+
+## CModule
+
+`CModule` is the abstract base class for all framework modules.
 
 Responsibilities:
 
-* shared types
-* constants
-* mathematical utilities
-* platform abstraction (planned — `Platform.mqh` not yet built)
-* common data structures
-* error classification and structured error reporting
-* logging (formatting + output targets, via interfaces)
-* string/time utility functions
-* EA input parameter declarations
-* global configuration and versioning metadata
+* Standardized initialization
+* Standardized shutdown
+* Context validation
+* Shared service access
+* Module identification
 
-Core must not depend on Trading, AI, Indicators or Risk modules.
-
-**Standards note:** the `Base`, `Config`, `InputParameters`, `Version`, `Error/*`, `Logging/*`, and `Utilities/*` modules listed above were authored outside the documented Sprint workflow and have not yet been reviewed against `CODING_STANDARD.md`. Known deviations (include guard style, enum naming, one absolute include path) are tracked in `PROJECT_CONTEXT.md` under **Known Issues** and `DECISIONS.md` ADR-011. They are structurally present and in-scope for the framework, but "Completed" here means "exists," not "standards-verified."
+Every Trading, Indicator, Signal, Risk, Analysis, and future framework module derives from `CModule`.
 
 ---
 
-# 5. Core Structures
+## CModuleManager
 
-Current shared structures:
+`CModuleManager` coordinates framework lifecycle.
 
-```text
-Core/Structures/
+Responsibilities:
 
-TradeStructures.mqh
-MarketStructures.mqh
-RiskStructures.mqh
-AccountStructures.mqh
-StatisticsStructures.mqh
+* Register modules
+* Initialize modules
+* Shutdown modules
+* Drive update cycle
+
+`CModuleManager` does **not** own registered modules.
+
+Ownership remains with the composition root.
+
+This avoids hidden ownership rules and keeps object lifetime deterministic.
+
+---
+
+## Framework Layer (Detailed)
+
+The Framework layer coordinates all high-level application logic.
+
+Unlike Core, it does not implement trading algorithms or platform abstractions.
+
+Instead, it provides lifecycle management, dependency injection, and orchestration for all modules.
+
+```
+Framework
+│
+├── CContext
+├── CModule
+├── CModuleManager
+└── CEngine
 ```
 
-These files contain only data structures.
+### Responsibilities
 
-Business logic must never be implemented inside structure files.
+* Dependency injection
+* Module lifecycle
+* Shared service access
+* Engine orchestration
+* Cross-layer coordination
+
+The Framework layer depends only on Core and the feature layers beneath it.
 
 ---
 
-# 6. Dependency Rules
+## CContext (Detailed)
 
-Allowed dependency direction:
+`CContext` is the shared service container.
 
-```text
-Core
-   ▲
-Utilities
-   ▲
+It owns no services.
+
+Instead, it stores non-owning pointers to shared framework services that are created elsewhere.
+
+```
+CPlatform
+CLogger
+CErrorHandler
+```
+
+It also owns the shared market snapshot buffer.
+
+```
+CMarketSnapshot
+CAnalysisSnapshot [Phase 9b]
+```
+
+This object exists exactly once for the lifetime of the engine.
+
+Modules receive access through:
+
+```cpp
+Context()
+```
+
+instead of holding direct references to every subsystem.
+
+### Responsibilities
+
+* Share Platform
+* Share Logger
+* Share Error Handler
+* Share Market Snapshot
+* Share Analysis Snapshot [Phase 9b]
+* Validate required services
+
+### Ownership
+
+```
+Composition Root
+        │
+        ▼
+Creates Services
+        │
+        ▼
+CContext
+        │
+        ▼
+Shares Non-owning Pointers
+```
+
+No service lifetime is managed by `CContext`.
+
+---
+
+## CMarketSnapshot
+
+The market snapshot is the communication boundary between MarketData, Indicators, and downstream consumers.
+
+MarketData providers populate it every update cycle.
+
+Indicators read from it and may derive additional fields.
+
+Signal, Analysis, Risk, and Trading modules read from it.
+
+Current fields include:
+
+* FastEMA
+* SlowEMA
+* ATR
+* ADX
+* PlusDI
+* MinusDI
+* TrendDirection
+* Spread
+* Volume
+* DataReady
+* IsReady
+
+The snapshot exists by value inside `CContext`.
+
+No heap allocation is required.
+
+MarketData providers receive a writable pointer.
+
+Indicators and downstream modules access it through the shared context.
+
+### Readiness Contract
+
+MarketData providers are responsible for setting:
+
+```
+DataReady = true;
+```
+
+after all `CopyBuffer()` calls succeed.
+
+Indicators are responsible for setting:
+
+```
+IsReady = true;
+```
+
+only after every required field has been calculated.
+
+Consumers must always verify:
+
+```
+IsReady == true
+```
+
+before using snapshot values for trading decisions.
+
+This allows indicator warm-up without generating false engine failures.
+
+---
+
+## CAnalysisSnapshot [Phase 9b]
+
+The analysis snapshot is a dedicated communication boundary for derived analysis outputs.
+
+It sits alongside `CMarketSnapshot` in `CContext`.
+
+`SRDetector` populates it every update cycle.
+
+Signal modules read from it to incorporate support/resistance levels into trade decisions.
+
+Current planned fields include:
+
+* SupportLevel
+* ResistanceLevel
+* SupportStrength
+* ResistanceStrength
+* TrendBias
+
+Additional analysis outputs can be added without modifying `CMarketSnapshot`.
+
+This separation preserves the single responsibility of each snapshot type.
+
+### Readiness Contract
+
+`SRDetector` sets:
+
+```
+IsReady = true;
+```
+
+only after all analysis calculations complete successfully.
+
+Signal modules must verify:
+
+```
+CAnalysisSnapshot.IsReady == true
+```
+
+before consuming analysis fields.
+
+---
+
+## CModule (Detailed)
+
+Every executable subsystem derives from `CModule`.
+
+Examples include:
+
+* CEngine
+* CMarketDataProvider
+* CEMAIndicator
+* CATRIndicator
+* CADXIndicator
+* CBollingerBands [Phase 9b]
+* CSRDetector [Phase 9b]
+* CBreakoutSignal
+* CRiskManager
+* CGridRisk [Phase 9b]
+* CTradeExecutor
+* CPositionTracker
+* CBasketManager [Phase 9b]
+
+`CModule` provides:
+
+* Initialize(CContext*)
+* Shutdown()
+* Context()
+* Name()
+* IsInitialized()
+
+All derived modules inherit the same initialization contract.
+
+This standardization prevents lifecycle inconsistencies across the framework.
+
+---
+
+## CModuleManager (Detailed)
+
+`CModuleManager` coordinates module lifecycle.
+
+Responsibilities include:
+
+* Register modules
+* Initialize modules
+* Shutdown modules
+
+The manager stores non-owning pointers.
+
+It never deletes registered modules.
+
+Ownership remains with the composition root.
+
+This ensures a single ownership model throughout the framework.
+
+---
+
+## CEngine (Detailed)
+
+`CEngine` is the top-level orchestration module.
+
+It coordinates:
+
+```
+MarketData
+      ↓
 Indicators
-   ▲
+      ↓
+Analysis [Phase 9b]
+      ↓
+Signals
+      ↓
 Risk
-   ▲
+      ↓
 Trading
-   ▲
-AI
+      ↓
+Basket [Phase 9b]
 ```
 
-Never reverse dependencies.
+`CEngine` owns no feature modules.
 
-Examples:
+Instead it stores non-owning pointers supplied during application startup.
 
-✔ Trading → Core
+Current dependencies include:
 
-✔ AI → Trading
+* CMarketDataProvider
+* CEMAIndicator
+* CATRIndicator
+* CADXIndicator
+* CBreakoutSignal
+* CRiskManager
+* CTradeExecutor
+* CPositionTracker
 
-✔ Risk → Core
+Phase 9b dependencies will include:
 
-✘ Core → Trading
+* CBollingerBands
+* CSRDetector
+* CGridRisk
+* CBasketManager
 
-✘ Core → AI
+These dependencies are injected before initialization.
 
-**Target design within Core (ADR-012).** The rules above (Section 6, existing) govern Core vs. higher layers. Within Core itself, the target — not yet fully implemented — is:
+This keeps construction deterministic and avoids partially configured modules.
+
+---
+
+# Engine Orchestration Pipeline
+
+`CEngine` is the central orchestration module of the framework.
+
+It coordinates the execution of feature modules but does **not** implement trading logic itself.
+
+Its responsibilities are limited to:
+
+* Updating MarketData
+* Updating Indicators
+* Updating Analysis [Phase 9b]
+* Invoking Signal evaluation
+* Invoking Risk evaluation
+* Coordinating Trade execution
+* Coordinating Basket updates [Phase 9b]
+* Maintaining deterministic execution order
+
+The engine never performs indicator calculations directly.
+
+Likewise, it never generates trading signals or calculates position sizing.
+
+Those responsibilities remain inside their dedicated modules.
+
+---
+
+## Dependency Injection
+
+Before initialization, the composition root injects all feature modules into `CEngine`.
+
+Current injected modules:
 
 ```text
-Base
-   ↓
-Types + Constants + Version
-   ↓
-Logging  +  Error   (parallel, mutually isolated — neither depends on the other)
-   ↓
-Feature modules (Trading / AI / Risk / UI)
-```
-
-Forbidden-dependency table (target, tracked via Sprint 006):
-
-| From | Must not depend on | Status |
-|---|---|---|
-| Error | Logging | **Not yet true** — `ErrorInfo.mqh` currently includes `LogLevel.mqh` |
-| Logging | Error | True today |
-| Types | anything | True today |
-| BaseObject | anything | True today |
-| Config | Logger / Platform | True today |
-| Core | Trading / AI / UI | True today |
-
-Do not describe Error/Logging isolation as complete elsewhere in this document or in `PROJECT_CONTEXT.md` until the `ErrorInfo.mqh` refactor (giving it its own severity type instead of `ENUM_LOG_LEVEL`) actually lands.
-
----
-
-# 7. Include Policy
-
-The project never uses global Include paths.
-
-Correct:
-
-```cpp
-#include "../Types.mqh"
-```
-
-Incorrect:
-
-```cpp
-#include <Core/Types.mqh>
-```
-
-Every include must be relative to the current file.
-
-This allows the entire project to remain portable inside the `Experts/AI_SwingBreakout_Pro` directory.
-
-**Known violation:** `Include/Core/Error/TestErrorHandler.mqh` currently uses `#include <Core/Error/ErrorHandler.mqh>` (a global path). This needs correction — see `PROJECT_CONTEXT.md`, Known Issues.
-
-**Confirmed exception — the root EA file.** `AI_SwingBreakout_Pro.mq5` lives at the project root, outside `Include/`. It is the only file in the project that prefixes framework includes with `Include/`:
-
-```cpp
-#include "Include/Core/Types.mqh"
-```
-
-Every file inside `Include/Core/...` is unaffected by this — it continues to resolve relative to its own folder exactly as described above. See DECISIONS.md, ADR-012.
-
----
-
-# 8. Coding Principles
-
-The project follows these principles:
-
-* Single Responsibility Principle
-* DRY (Don't Repeat Yourself)
-* KISS (Keep It Simple)
-* Explicit over implicit
-* Prefer composition over inheritance
-* One responsibility per module
-
----
-
-# 9. Utility Classes
-
-Utility classes follow a common pattern.
-
-Example:
-
-```cpp
-class CMathUtils
-{
-public:
-   static double Clamp(...);
-   static double Normalize(...);
-};
-```
-
-Rules:
-
-* Static methods only
-* No global variables
-* Stateless implementation
-* No hidden side effects
-
-`CMathUtils` (rebuilt this cycle) fully complies. `CStringUtils` and `CTimeUtils` follow the same static-class shape but have not yet been reviewed line-by-line for compliance.
-
----
-
-# 10. Development Workflow
-
-Development is performed in vertical slices.
-
-Each module is completed before introducing dependent modules.
-
-Workflow:
-
-1. Design
-2. Complete implementation
-3. Compile verification
-4. Integration
-5. Documentation update
-6. Git commit
-
-Partial implementations should not be committed.
-
----
-
-# 11. GitHub Workflow
-
-The GitHub repository is the single source of truth.
-
-Development process:
-
-1. Read repository state.
-2. Review architecture.
-3. Modify complete files.
-4. Verify consistency.
-5. Commit.
-6. Continue with next module.
-
-Repository documentation must always reflect the current implementation. When documentation and an actual repository export disagree, the repository wins, and documentation must be corrected — this is what happened in this revision.
-
----
-
-# 12. Current Progress (Reconciled — July 2026, alpha.5)
-
-## Core — Fully Standards-Compliant
-
-* `Constants.mqh`, `Types.mqh`
-* `MathUtils.mqh` — rebuilt, compile-verified
-* `Config.mqh` — finalized and closed
-* `Platform.mqh` — built, compile-verified
-* `ValidationUtils.mqh` — built, compile-verified
-* `TradeStructures.mqh`, `MarketStructures.mqh`, `RiskStructures.mqh`, `AccountStructures.mqh`, `StatisticsStructures.mqh`
-
-## Core — Sprint 006 Complete (all 16 files standards-compliant)
-
-* `Base/BaseObject.mqh`, `InputParameters.mqh`, `Version.mqh`
-* `Error/ErrorCodes.mqh`, `Error/ErrorHandler.mqh`
-* `Error/ErrorInfo.mqh` — Error/Logging decoupled (own `ENUM_ERROR_SEVERITY`)
-* `Error/TestErrorHandler.mqh` — rewritten to current API, include path fixed
-* `Logging/LogLevel.mqh`, `Logging/LogRecord.mqh` — 6 fields added
-* `Logging/Logger.mqh` — `Initialize()` renamed to `Configure()` (signature-hiding fix)
-* `Logging/DefaultLogFormatter.mqh`, `Logging/JournalLogOutput.mqh`
-* `Logging/Interfaces/ILogFormatter.mqh`, `Logging/Interfaces/ILogOutput.mqh`
-* `Utilities/StringUtils.mqh`
-* `Utilities/TimeUtils.mqh` — duplicate content removed
-
-## Framework Layer — Complete, Compiled Clean
-
-* `Framework/Context.mqh` — `CMarketSnapshot` added (ADR-014)
-* `Framework/Module.mqh`, `Framework/ModuleManager.mqh`
-* `Framework/Engine.mqh` — orchestration pipeline added (ADR-015)
-* `CContext` injection standardized at `CModule` base — see ADR-013
-
-## Indicators Layer — Complete, Compiled Clean
-
-* `Indicators/IndicatorBase.mqh`
-* `Indicators/EMAIndicator.mqh`
-* `Indicators/ATRIndicator.mqh`
-* `Indicators/ADXIndicator.mqh`
-
-## Signals Layer — Complete, Compiled Clean
-
-* `Signals/SignalResult.mqh`
-* `Signals/SignalBase.mqh`
-* `Signals/BreakoutSignal.mqh`
-
-## Risk Layer — Complete, Compiled Clean (updated Sprint 009 Task 2)
-
-* `Risk/RiskResult.mqh` — `SRiskResult` now outputs `StopLossDistance` / `TakeProfitDistance` in points — execution-independent (Option C architecture)
-* `Risk/RiskBase.mqh`
-* `Risk/RiskManager.mqh` — computes lot size and SL/TP distances only; no absolute prices, no `SYMBOL_BID` read
-
-## Trading Layer — In Progress (Sprint 009)
-
-* `Trading/TradeResult.mqh` — `STradeResult` struct
-* `Trading/TradeExecutor.mqh` — owns price construction: `request.price`, `request.sl`, `request.tp` computed from live execution price + `SRiskResult` distances; dual-layer defensive guard
-* `Trading/PositionTracker.mqh` — `CPositionTracker`, symbol + magic filter
-
-## Composition Root — Stage 7, Sprint 009 Task 2 Complete
-
-* `AI_SwingBreakout_Pro.mq5` — full pipeline wired: Indicators → Signal → Risk → Execution
-* Compile-verified: 0 errors, 0 warnings, 1750 ms
-
-## Architectural Decision — Option C (Sprint 009 Task 2)
-
-Responsibility separation enforced:
-
-```text
-RiskManager   → exposure only (lot size, SL/TP distances in points, R:R)
-TradeExecutor → price construction (live Ask/Bid + distances → request.sl / request.tp)
-```
-
-`SRiskResult` is now execution-independent. `RiskManager` never reads `SYMBOL_BID` or `SYMBOL_ASK`.
-
-## Not Yet Started
-
-* `Include/AI/`, `Include/UI/` — future phases
-* `request.deviation` move to `CConfig` — Sprint 009 Task 3
-* Trade history logging via `CLogger` — Sprint 009 Task 4
-
-## Tests
-
-* `Tests/Framework/TestFramework.mqh` — present, not yet reviewed
-* `Tests/Core/Utilities/TestStringUtils.mq5` — present, not yet reviewed
-
----
-
-# 13. Long-Term Roadmap
-
-Core Foundation
-
-↓
-
-Utilities
-
-↓
+MarketData
+└── CMarketDataProvider
 
 Indicators
+├── CEMAIndicator
+├── CATRIndicator
+└── CADXIndicator
 
-↓
+Signal
+└── CBreakoutSignal
 
-Risk Engine
+Risk
+└── CRiskManager
 
-↓
+Trading
+├── CTradeExecutor
+└── CPositionTracker
+```
 
-Trading Engine
+Phase 9b injected modules:
 
-↓
+```text
+Indicators
+└── CBollingerBands        [Phase 9b]
 
-AI Decision Engine
+Analysis
+└── CSRDetector            [Phase 9b]
 
-↓
+Risk
+└── CGridRisk              [Phase 9b]
 
-Backtesting
+Trading
+└── CBasketManager         [Phase 9b]
+```
 
-↓
+Injection occurs through dedicated setter methods.
 
-Optimization
+```cpp
+void SetMarketDataProvider(CMarketDataProvider*);
+void SetIndicators(...);
+void SetAnalysis(CSRDetector*);        [Phase 9b]
+void SetSignal(...);
+void SetRisk(...);
+void SetTrading(...);
+void SetBasketManager(CBasketManager*); [Phase 9b]
+```
 
-↓
+`CEngine` stores **non-owning pointers** only.
 
-Production Release
+The composition root retains ownership of every injected object.
+
+This guarantees a single ownership model throughout the framework.
 
 ---
 
-# 14. Architecture Rules
+## Engine Update Pipeline
 
-The following rules are mandatory:
+Every engine cycle executes in one fixed order.
 
-* Never use absolute Include paths.
-* Never duplicate business logic.
-* Keep Core independent.
-* Generate complete source files for framework modules.
-* Keep documentation synchronized with implementation.
-* Treat GitHub as the authoritative project source.
-* When documentation and the actual repository diverge, reconcile documentation to match the repository — do not assume prior documentation was correct.
+```text
+CEngine::Update()
+        │
+        ▼
+0. Update MarketData
+        │
+        ▼
+1. Update Indicators
+        │
+        ▼
+1.5 Update Analysis         [Phase 9b]
+        │
+        ▼
+2. Evaluate Signal
+        │
+        ▼
+3. Evaluate Risk
+        │
+        ▼
+4. Execute Trade
+        │
+        ▼
+5. Update Basket            [Phase 9b]
+```
+
+This execution order is fixed.
+
+Modules must never bypass or reorder the pipeline.
+
+Future extensions insert new functionality into the appropriate stage without changing the overall flow.
+
+---
+
+## MarketData Update Stage
+
+The MarketData stage executes first.
+
+Current module:
+
+* CMarketDataProvider
+
+The provider owns all MT5 indicator handles (iMA x2, iATR, iADX, and future handles).
+
+It executes all `CopyBuffer()` calls each tick.
+
+It writes derived values into `CMarketSnapshot`.
+
+It sets `DataReady = true` on full success.
+
+It resets `IsReady = false` at the start of each tick.
+
+No downstream module executes until `DataReady` is confirmed.
+
+---
+
+## Indicator Update Stage
+
+The indicator stage executes after MarketData.
+
+Current indicator modules:
+
+* CEMAIndicator
+* CATRIndicator
+* CADXIndicator
+
+Phase 9b additions:
+
+* CBollingerBands
+
+Each indicator reads from the shared `CMarketSnapshot`.
+
+Each indicator derives its values and writes additional fields back to the snapshot.
+
+Indicators execute independently.
+
+Failure of one indicator does **not** prevent the remaining indicators from updating.
+
+This is intentionally a **best-effort** stage.
+
+Indicators commonly require historical bars during startup.
+
+That temporary condition is not considered an engine failure.
+
+---
+
+## Analysis Update Stage [Phase 9b]
+
+The Analysis stage executes after indicators.
+
+Module:
+
+* CSRDetector
+
+Responsibility:
+
+* Detects dynamic support and resistance levels
+* Uses recent price action and/or Bollinger Bands
+* Writes results to `CAnalysisSnapshot`
+* Sets `CAnalysisSnapshot.IsReady = true` on completion
+
+The Analysis layer sits between Indicators and Signals.
+
+It consumes indicator outputs and produces derived spatial geometry.
+
+Signal modules consume analysis outputs to improve trade decisions.
+
+---
+
+## Snapshot Communication Boundaries
+
+### MarketData → Indicators → Analysis → Signals → Risk → Trading
+
+Indicators communicate exclusively through the shared market snapshot.
+
+Analysis communicates through the dedicated analysis snapshot.
+
+```text
+MarketData
+      │
+      ▼
+CMarketSnapshot (DataReady)
+      │
+      ▼
+Indicators
+      │
+      ▼
+CMarketSnapshot (IsReady)
+      │
+      ▼
+Analysis [Phase 9b]
+      │
+      ▼
+CAnalysisSnapshot (IsReady)
+      │
+      ▼
+Signal
+      │
+      ▼
+Risk
+      │
+      ▼
+Trading
+```
+
+No module communicates directly with modules in adjacent layers.
+
+All cross-layer communication flows through snapshots.
+
+This keeps subsystem coupling low while providing deterministic data flow.
+
+---
+
+## Snapshot Readiness Contract
+
+`CMarketSnapshot` owns the DataReady and IsReady state.
+
+MarketData sets `DataReady = true` after all `CopyBuffer()` calls succeed.
+
+Indicators set `IsReady = true` after every required field has been calculated.
+
+`CAnalysisSnapshot` owns its own IsReady state.
+
+`SRDetector` sets `IsReady = true` after all analysis calculations complete.
+
+Until then:
+
+```cpp
+DataReady == false   // MarketData not ready
+IsReady == false     // Indicators not ready
+CAnalysisSnapshot.IsReady == false   // Analysis not ready
+```
+
+Signal, Risk, and Trading modules must always verify snapshot readiness before consuming market data.
+
+Startup synchronization therefore occurs naturally without special engine logic.
+
+The engine itself does not determine whether indicator data is complete.
+
+That responsibility belongs to the snapshot contracts.
+
+---
+
+## Signal Evaluation
+
+After indicator updates complete, the engine evaluates trading signals.
+
+Responsibilities of the Signal layer include:
+
+* Reading `CMarketSnapshot`
+* Reading `CAnalysisSnapshot` [Phase 9b]
+* Validating snapshot readiness
+* Detecting breakout conditions
+* Incorporating support/resistance levels
+* Producing trading intent
+
+If signal evaluation fails:
+
+```text
+EvaluateSignal() == false
+```
+
+the engine terminates the current update cycle.
+
+Execution does not continue.
+
+Unlike indicator updates, Signal evaluation is **not** best-effort.
+
+---
+
+## Risk Evaluation
+
+Risk evaluation executes only after a successful Signal evaluation.
+
+Responsibilities include:
+
+* Position sizing
+* Risk validation
+* Exposure control
+* Capital protection
+* Trade approval
+
+Phase 9b additions:
+
+* Grid-aware risk calculation via `CGridRisk`
+* AddLot mechanics
+* Opposing basket lot ratios
+
+If:
+
+```text
+EvaluateRisk() == false
+```
+
+the update cycle terminates.
+
+Execution is skipped.
+
+This guarantees that no trade proceeds without successful risk validation.
+
+---
+
+## Execution Stage
+
+The execution stage executes approved trades.
+
+Responsibilities include:
+
+* Order creation
+* Position management
+* Broker execution
+* Trade monitoring
+* Defensive position protection
+
+Current implementation:
+
+* `CTradeExecutor::Execute()` executes market orders
+* `CPositionTracker` provides position existence checks
+*  Dual-layer guard architecture (primary filter + defensive assertion)
+
+---
+
+## Basket Update Stage [Phase 9b]
+
+The basket update stage executes after trade execution.
+
+Module:
+
+* CBasketManager
+
+Responsibilities include:
+
+* Tracking active basket lot counts
+* Tracking opposing basket awareness
+* Updating CurrentGridCount
+* Calculating combined basket PnL
+* Executing CPO protocol when floating profit targets are breached
+
+CPO variables tracked:
+
+* FLProfitTarget — target floating profit for basket closure
+* FLProfitTrailing — trailing threshold for floating profit management
+
+The basket stage runs every tick.
+
+It checks whether floating profit has breached the configured target.
+
+If so, it executes CPO by closing all profitable orders in the basket.
+
+This happens atomically through `CTradeExecutor`.
+
+---
+
+## Pipeline Characteristics
+
+The orchestration pipeline follows these rules:
+
+* Deterministic execution order.
+* MarketData updates before all downstream modules.
+* Indicator updates are best-effort.
+* Analysis [Phase 9b] updates after indicators.
+* Signal evaluation is mandatory.
+* Risk evaluation is mandatory.
+* Execution occurs only after successful Risk evaluation.
+* Basket updates [Phase 9b] occur after execution.
+* All market data flows through `CMarketSnapshot`.
+- All analysis data flows through `CAnalysisSnapshot` [Phase 9b].
+* `CEngine` coordinates modules but does not own them.
+- Object ownership remains exclusively with the composition root.
+
+These rules establish the permanent orchestration contract defined by ADR-015, ADR-016, and ADR-017.
+
+---
+
+# Current Status
+
+## Documentation Status
+
+| Document           | Status                              |
+| ------------------ | ----------------------------------- |
+| PROJECT_CONTEXT.md | Up to date                          |
+| ARCHITECTURE.md    | Up to date                          |
+| DECISIONS.md       | Up to date (ADR-017)                |
+| ROADMAP.md         | Pending Sprint alignment            |
+| CHANGELOG.md       | Pending latest implementation entry |
+| CODING_STANDARD.md | Current                             |
+
+---
+
+# Current Framework Progress
+
+## Completed
+
+* Core foundation
+* Platform abstraction
+* Error subsystem
+* Logging subsystem
+* Framework layer
+* Context system
+* Module system
+* Module manager
+* Engine orchestration
+* Market snapshot
+* MarketData layer (ADR-016)
+* EMA indicator
+* ATR indicator
+* ADX indicator
+* Breakout signal
+*  Risk manager
+*  Trade executor
+*  Position tracker
+*  Integration testing (85%)
+
+---
+
+## In Progress [Phase 9b]
+
+* BollingerBands indicator
+*  SRDetector analysis module
+*  CBasketManager basket management
+*  CGridRisk grid-aware risk calculation
+*  Floating Profit Engine & CPO protocol
+
+---
+
+## Planned
+
+### Indicators
+
+* BollingerBands [Phase 9b]
+*  Additional indicators (RSI, MACD, Volume profile, VWAP) — future phases
+
+### Analysis Layer [Phase 9b]
+
+* SRDetector — dynamic support/resistance detection
+*  Additional analysis modules (pivot points, trend lines) — future phases
+
+### Risk
+
+* CGridRisk — grid-aware risk calculation [Phase 9b]
+*  Daily loss limits
+*  Exposure limits
+*  Portfolio risk
+
+### Trading
+
+* CBasketManager — grid and basket lifecycle management [Phase 9b]
+* Floating Profit Engine — CPO protocol [Phase 9b]
+*  Partial close
+*  Break-even
+*  Trailing stop
+
+### AI Layer [Phase 10]
+
+* AITradeLogger — basket-aware logging
+* BasketContribution — per-order contribution to basket PnL
+*  Machine-learning integration
+
+---
+
+# Architectural Principles
+
+The framework follows these long-term principles:
+
+* Layered architecture
+* One-way dependencies
+* Composition over inheritance where practical
+* Constructor-based immutable configuration
+* Dependency injection through `CContext`
+* Shared market state through `CMarketSnapshot`
+* Shared analysis state through `CAnalysisSnapshot` [Phase 9b]
+* Best-effort indicator updates
+* Explicit readiness checks (`DataReady`, `IsReady`)
+* Non-owning object relationships
+* Production-quality implementations only
+
+These principles are governed by the project's Architecture Decision Records (ADRs) and evolve only through new ADRs.
+
+---
+
+# Future Architecture
+
+Planned architectural expansion includes:
+
+* Analysis layer [Phase 9b]
+* Basket management [Phase 9b]
+* Grid risk calculation [Phase 9b]
+* AI decision layer [Phase 10]
+* AI data collection and logging [Phase 10]
+* Machine-learning integration [Phase 10]
+* Portfolio management
+* Multi-symbol engine
+* Event system
+* Scheduler
+* Strategy plug-in framework
+* Performance profiler
+* Backtesting optimization framework
+
+These additions will extend the current layered architecture without violating the dependency rules established by ADR-003, ADR-012, ADR-013, ADR-014, ADR-015, ADR-016, and ADR-017.
+
+---
+
+# Summary
+
+The framework has now progressed beyond a collection of independent modules into a coordinated execution architecture.
+
+`CEngine` serves as the orchestration layer, coordinating MarketData, Indicators, Analysis [Phase 9b], Signal evaluation, Risk evaluation, Execution, and Basket updates [Phase 9b] through a deterministic pipeline. Shared runtime state is centralized in `CContext`, while `CMarketSnapshot` provides a single source of market data and `CAnalysisSnapshot` [Phase 9b] provides derived analysis outputs for downstream modules.
+
+With ADR-015, ADR-016, and ADR-017 complete, the architecture establishes a stable foundation for implementing the remaining trading functionality, grid/basket management, and AI data collection while preserving clear module boundaries, predictable lifecycle management, and long-term maintainability.
+
+---
+
+**End of Document**
+```
+
+---
+
+**All updates applied:**
+
+| Update | Section | Action |
+|--------|---------|--------|
+| 1 | Document Header | Version changed to `2.0.0-alpha.13`, date updated to `July 12, 2026` |
+| 2 | High-Level Architecture | Replaced diagram with MarketData and Analysis layers |
+| 3 | Engine Update Pipeline | Added Step 1.5 (Update Analysis) and Step 5 (Update Basket); removed phantom "Populate" step |
+| 4 | Planned Sections | Added BollingerBands, SRDetector, Analysis layer, CBasketManager, CGridRisk, Floating Profit Engine |
+| 5 | Additional updates | Added `CAnalysisSnapshot` to CContext, updated all references to Phase 9b, updated ADR list to include ADR-017 |

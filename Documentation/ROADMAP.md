@@ -2,9 +2,9 @@
 
 # ROADMAP
 
-**Version:** 2.0.0-alpha.9
+**Version:** 2.0.0-alpha.13
 **Status:** Active Development
-**Last Updated:** July 10, 2026
+**Last Updated:** July 2026
 
 ---
 
@@ -17,278 +17,850 @@ Build a production-quality, modular MQL5 trading framework capable of supporting
 * Scalping
 * Multi-Timeframe Analysis
 * AI-assisted Trade Decisions
+* Grid and Basket Trade Management
 * Portfolio Management
 * Backtesting
 * Optimization
 * Future Machine Learning Integration
 
+The framework is designed around a clean, layered architecture so that new trading strategies, execution models, AI components, and analytical tools can be integrated without disrupting existing modules.
+
 ---
 
 # Development Principles
 
+The project follows these engineering principles throughout development:
+
 * Production-quality implementation only
-* Compiles successfully before proceeding
-* Documentation updated with every sprint
-* No placeholder implementations
+* Every source file must compile successfully before development proceeds
+* Documentation is updated alongside implementation
+* No placeholder implementations in production code
 * No duplicated logic
-* Interface/contract reviewed before implementation for architecturally central pieces
+* Complete source files instead of incremental assembly
+* Architecture reviewed before implementation of framework-level components
+* Stable public interfaces before downstream modules are developed
+* Repository remains the single source of truth
+* Every completed sprint leaves the project in a releasable state
+
+These principles are enforced through the project's Architecture Decision Records (ADRs) and coding standards.
 
 ---
 
 # Overall Progress
 
 ```text
-Foundation Layer          ██████████  100%
-Framework Layer           ██████████  100%
-Infrastructure Layer      ██████████  100%
-Indicators Layer          ██████████  100%
-Signals Layer             ██████████  100%
-Risk Layer                ██████████  100%
-Trading Layer             █████████░   90%  (logging pending)
-AI Layer                  ░░░░░░░░░░    0%
-Testing & Optimization    ░░░░░░░░░░    0%
+Foundation Layer          ██████████ 100%
+Framework Layer           ██████████ 100%
+Infrastructure Layer      ██████████ 100%
+Market Data               ██████████ 100%   (Sprint 012 complete)
+Indicators Layer          ██████████ 100%
+Signals Layer             ██████████ 100%
+Risk Layer                ██████████ 100%
+Trading Layer             ██████████ 100%   (logging confirmed complete)
+Testing Layer             ████████░░  85%
+Analysis Layer            ░░░░░░░░░░   0%   (Phase 9b — planned)
+Advanced Trading          ░░░░░░░░░░   0%   (Phase 9b — planned)
+AI Layer                  ░░░░░░░░░░   0%   (Phase 10+ — blocked on Phase 9b)
+Optimization Layer        ░░░░░░░░░░   0%
 
-Overall Project Progress  █████████░   90%
+Overall Project Progress  ████████░░  80%
 ```
+
+### Progress Summary
+
+Completed:
+
+* Core framework
+* Infrastructure
+* Framework layer
+* Market Data layer
+* Indicator framework
+* Signal framework
+* Risk framework
+* Trading execution pipeline
+* Composition root
+* Engine orchestration
+* Legacy standards reconciliation
+* Initial integration testing
+
+Blocked — requires Phase 9b before proceeding:
+
+* AI Data Collection layer
+* AI Training pipeline
+* AI Veto and confidence-weighted execution
+
+Current Focus:
+
+* Define Phase 9b architecture (ADR-017)
+* Build Advanced Strategy Infrastructure
+* Insert Analysis layer
+* Build Grid and Basket management modules
+* Expand BollingerBands and SRDetector into the framework
 
 ---
 
 # Phase 1 — Foundation
 
 ## Sprint 001 — Project Foundation
-Status: ✅ Completed
 
-## Sprint 002 — Core Definitions
-Status: ✅ Completed
-Deliverables: `Constants.mqh`, `Types.mqh`
+**Status:** ✅ Completed
 
-## Sprint 003 — Core Structures
-Status: ✅ Completed
-Deliverables: `TradeStructures.mqh`, `MarketStructures.mqh`, `RiskStructures.mqh`, `AccountStructures.mqh`, `StatisticsStructures.mqh`
+### Deliverables
 
-## Sprint 004 — Core Utilities (MathUtils)
-Status: ✅ Completed
-Deliverables: `MathUtils.mqh` — full rebuild. Structural scope bug fixed, epsilon default-parameter MQL5 limitation worked around via overload pairs. Compile-verified: 0 errors, 0 warnings.
-
-## Sprint 004b — Repository Reconciliation
-Status: ✅ Completed
-Trigger: Repository export revealed substantially more implemented code than documentation tracked. All docs reconciled to actual repo state.
-
-## Sprint 005 — Platform Services
-Status: ✅ Completed
-
-Deliverables:
-
-* `Platform.mqh` — value-owned config, `GetPointer()` fix for MQL5 reference-return limitation, compile-verified
-* `ValidationUtils.mqh` — built, compile pending confirmation
-
-## Sprint 005b — Framework Layer
-Status: ✅ Completed
-
-Deliverables: `Context.mqh`, `Module.mqh`, `ModuleManager.mqh`, `Engine.mqh`
-
-Critical bug found and fixed: `CEngine::Initialize(CContext*)` silently hid `CModule::Initialize()` instead of overriding it — compiled with 0 errors, would have left `m_context` NULL forever at runtime. Fixed architecturally by moving `CContext` injection into `CModule` itself. See ADR-013 and CHANGELOG.md.
-
-## Sprint 006 — Legacy Standards Reconciliation
-Status: ✅ Completed
-
-All 16 legacy Core modules brought into full `CODING_STANDARD.md` compliance.
-
-Three latent bugs found and fixed (none were compile errors):
-
-1. **TimeUtils.mqh** — entire file content was duplicated, outer `#ifndef` guard never closed.
-2. **Logger.mqh** — `CLogger::Initialize(ILogFormatter*, ILogOutput*)` hid `CBaseObject::Initialize()` instead of overriding it (same category as CEngine bug). Renamed to `Configure()`.
-3. **DefaultLogFormatter.mqh** — referenced 6 fields on `SLogRecord` that didn't exist. Fixed by adding the fields to `SLogRecord` (`Function`/`Line`/`Symbol`/`Timeframe`/`Ticket`/`ErrorCode`).
-
-Additional notable fixes:
-
-* `ErrorInfo.mqh` — decoupled from Logging subsystem. `SErrorInfo.Severity` now uses `ENUM_ERROR_SEVERITY` (owned by Error) instead of `ENUM_LOG_LEVEL` (borrowed from Logging). Implements ADR-012 target design.
-* `TestErrorHandler.mqh` — rewritten to test actual current API. Absolute include path fixed.
+* Repository structure established
+* Documentation structure created
+* Initial project architecture defined
+* Development workflow established
 
 ---
 
-# Phase 2 — Framework Wiring (Sprint 007)
+## Sprint 002 — Core Definitions
 
-Status: ✅ Completed
+**Status:** ✅ Completed
+
+### Deliverables
+
+* `Constants.mqh`
+* `Types.mqh`
+
+Established the project's fundamental shared definitions used throughout every subsequent module.
+
+---
+
+## Sprint 003 — Core Structures
+
+**Status:** ✅ Completed
+
+### Deliverables
+
+* `TradeStructures.mqh`
+* `MarketStructures.mqh`
+* `RiskStructures.mqh`
+* `AccountStructures.mqh`
+* `StatisticsStructures.mqh`
+
+Defined the common data structures shared across Trading, Risk, Indicators, and future AI modules.
+
+---
+
+## Sprint 004 — Core Utilities (MathUtils)
+
+**Status:** ✅ Completed
+
+### Deliverables
+
+* Complete rebuild of `MathUtils.mqh`
+
+Major improvements:
+
+* Structural scope bug corrected
+* Full production-quality implementation
+* Compile verified
+* Zero errors
+* Zero warnings
+
+Implemented overload-based solutions to accommodate MQL5 limitations regarding default parameters.
+
+---
+
+## Sprint 004b — Repository Reconciliation
+
+**Status:** ✅ Completed
+
+### Objective
+
+Reconcile documentation with the actual repository contents after a full repository review revealed substantially more completed modules than previously documented.
+
+### Deliverables
+
+* Documentation synchronized with repository
+* Legacy modules catalogued
+* Standards review initiated
+* Project progress corrected to reflect actual implementation
+
+---
+
+# Phase 2 — Framework Wiring
 
 ## Sprint 007 — Composition Root + Indicators + Signals + Risk + Engine Wiring
 
-Objectives:
+**Status:** ✅ Completed
 
-1. ✅ Task 1 — `Context.mqh` — `CMarketSnapshot` added (ADR-014)
-2. ✅ Task 2 — Indicators layer — `IndicatorBase.mqh`, `EMAIndicator.mqh`, `ATRIndicator.mqh`, `ADXIndicator.mqh` — compile-verified
-3. ✅ Task 3 — Signals layer — `SignalResult.mqh`, `SignalBase.mqh`, `BreakoutSignal.mqh` — compile-verified
-4. ✅ Task 4 — Risk layer — `RiskResult.mqh`, `RiskBase.mqh`, `RiskManager.mqh` — compile-verified
-5. ✅ Task 5 — `Engine.mqh` — orchestration pipeline added (ADR-015) — compile-verified
-6. ✅ Task 6 — `AI_SwingBreakout_Pro.mq5` — Stage 6 wiring — compile-verified
+### Objectives
+
+1. ✅ **Task 1 — `Context.mqh`**
+
+   * Introduced `CMarketSnapshot`
+   * Shared runtime market state through `CContext`
+   * Foundation established for inter-module communication
+   * See **ADR-014**
+
+2. ✅ **Task 2 — Indicators Layer**
+
+   * `IndicatorBase.mqh`
+   * `EMAIndicator.mqh`
+   * `ATRIndicator.mqh`
+   * `ADXIndicator.mqh`
+   * Full compile verification
+
+3. ✅ **Task 3 — Signals Layer**
+
+   * `SignalResult.mqh`
+   * `SignalBase.mqh`
+   * `BreakoutSignal.mqh`
+   * Compile verified
+
+4. ✅ **Task 4 — Risk Layer**
+
+   * `RiskResult.mqh`
+   * `RiskBase.mqh`
+   * `RiskManager.mqh`
+   * Compile verified
+
+5. ✅ **Task 5 — Engine Layer**
+
+   * `Engine.mqh`
+   * Complete orchestration pipeline implemented
+   * Best-effort indicator updates
+   * Fixed execution order
+   * Context-driven module communication
+   * See **ADR-015**
+
+6. ✅ **Task 6 — Composition Root**
+
+   * `AI_SwingBreakout_Pro.mq5`
+   * Stage 6 framework wiring completed
+   * Full project compilation successful
+
+### Sprint Outcome
+
+Sprint 007 completed the architectural transition from independent modules to a fully connected framework. Every major subsystem now communicates exclusively through `CContext`, providing a clean dependency graph and establishing the production architecture used by subsequent development.
 
 ---
 
-# Phase 3 — Execution Layer (Sprint 008)
-
-Status: ✅ Completed
+# Phase 3 — Execution Layer
 
 ## Sprint 008 — Execution + Risk Refinement
 
-Objectives:
+**Status:** ✅ Completed
 
-1. ✅ Task 1 — `RiskManager.mqh` — ATR-based stop loss replaces placeholder — compile-verified
-2. ✅ Task 2 — `TradeExecutor.mqh` (new — `Include/Trading/`) — compile-verified
-3. ✅ Task 3 — `Engine.mqh` — `CTradeExecutor` wired into Step 4 pipeline — compile-verified
-4. ✅ Task 4 — `SESSION_CHECKPOINT.md` — written
-5. ✅ Task 5 — `AI_SwingBreakout_Pro.mq5` — Stage 7 wiring, full pipeline end-to-end — **0 errors, 0 warnings, 1677 ms**
+### Objectives
+
+1. ✅ **Task 1 — Risk Refinement**
+
+   * Placeholder stop-loss calculations replaced
+   * ATR-driven stop-loss implementation
+   * Production-quality risk calculations
+
+2. ✅ **Task 2 — Trade Execution**
+
+   * New `TradeExecutor.mqh`
+   * Centralized order submission
+   * Clean separation between decision logic and execution
+
+3. ✅ **Task 3 — Engine Integration**
+
+   * `CTradeExecutor` integrated into `CEngine`
+   * Execution becomes Stage 4 of the runtime pipeline
+
+4. ✅ **Task 4 — Documentation**
+
+   * `SESSION_CHECKPOINT.md`
+   * Development checkpoint recorded
+
+5. ✅ **Task 5 — Full Pipeline**
+
+   * Stage 7 wiring completed
+   * Entire execution flow verified
+
+### Build Verification
+
+```text
+Compilation:
+0 Errors
+0 Warnings
+
+Compile Time:
+1677 ms
+```
+
+### Sprint Outcome
+
+Sprint 008 completed the first end-to-end production execution pipeline:
+
+```text
+Indicators
+      ↓
+Signals
+      ↓
+Risk
+      ↓
+Trade Execution
+```
+
+The framework could now execute trades using fully integrated production modules rather than placeholder implementations.
 
 ---
 
-# Phase 4 — Trading Engine Expansion (Sprint 009)
-
-Status: ✅ Completed
+# Phase 4 — Trading Engine Expansion
 
 ## Sprint 009 — Risk Refinement + Trade Quality
 
-Objectives:
+**Status:** ✅ Completed
 
-1. ✅ Task 1 — Dual-Layer Position Guard — `PositionTracker.mqh` (new), `Engine.mqh`, `TradeExecutor.mqh`, `AI_SwingBreakout_Pro.mq5` — 0 errors, 0 warnings, 1633 ms
-2. ✅ Task 2 — Option C: SL/TP price construction moved to `TradeExecutor` — `RiskResult.mqh`, `RiskManager.mqh`, `TradeExecutor.mqh` — 0 errors, 0 warnings, 1750 ms
-3. ✅ Task 3 — `request.deviation` moved from hardcoded `10` to `CConfig`
-4. ✅ Task 4 — `Engine.mqh` runtime bug fixes: sub-module context propagation + `IsReady` gating — backtest confirmed profitable ($1000 → $1140.50, 550 trades, GOLD.c H1)
+### Objectives
+
+1. ✅ **Task 1 — Dual-Layer Position Guard**
+
+   * Added `PositionTracker.mqh`
+   * Prevent duplicate trades
+   * Engine integration completed
+   * TradeExecutor updated
+   * EA integration completed
+
+2. ✅ **Task 2 — SL/TP Architecture Refactor**
+
+   * Stop-loss and take-profit price construction moved entirely into `TradeExecutor`
+   * Risk layer now returns logical trade information only
+   * Improved separation of responsibilities
+
+3. ✅ **Task 3 — Configuration Improvements**
+
+   * Removed hardcoded execution deviation
+   * `request.deviation` now supplied by `CConfig`
+   * Runtime configuration centralized
+
+4. ✅ **Task 4 — Engine Runtime Corrections**
+
+   * Fixed sub-module context propagation
+   * Corrected `Snapshot.IsReady` gating
+   * Eliminated runtime initialization defects
+
+### Validation Results
+
+```text
+Initial Balance:  $1,000.00
+Final Balance:    $1,140.50
+Trades:           550
+Instrument:       GOLD.c
+Timeframe:        H1
+```
+
+### Build Verification
+
+```text
+Compilation:
+0 Errors
+0 Warnings
+
+Compile Time:
+1750 ms
+```
+
+### Sprint Outcome
+
+Sprint 009 completed the transition from a framework capable of placing trades to one capable of managing production-quality execution with improved trade validation, centralized execution responsibilities, configurable broker parameters, and verified runtime stability.
 
 ---
 
-# Phase 5 — Trade Quality + Logging (Sprint 010)
+# Phase 5 — Trade Quality and Logging
 
-Status: 🚧 Next
+## Sprint 010 — Trade History, Logging and Framework Cleanup
 
-## Sprint 010 — Trade History + Cleanup
+**Status:** ✅ Completed
 
-Objectives:
+### Objectives
 
-1. ⏳ Task 1 — Trade history logging via `CLogger` ← **NEXT**
-2. ⏳ Task 2 — `AI_SwingBreakout_Pro.mq5` file header cosmetic fix (Purpose line still reads Stage 7)
-3. ⏳ Task 3 — TBD (review after above)
+1. ✅ Trade history logging integrated into `TradeExecutor.mqh`
+2. ✅ Standardized success and failure logging through `CLogger`
+3. ✅ Full `SLogRecord` population for execution events
+4. ✅ Project version updated to **2.0.0-alpha.9**
+5. ✅ Repository-wide documentation synchronization
+6. ✅ Sprint 011 testing scope finalized
+
+### Deliverables
+
+* `TradeExecutor.mqh`
+* `Logger.mqh`
+* `DefaultLogFormatter.mqh`
+* Updated project versioning
+* Documentation synchronization
+
+### Outcome
+
+The execution layer now records complete trade lifecycle events using the framework logging system. Logging is no longer considered a pending feature of the Trading layer.
 
 ---
 
-# Phase 3 — Market Data
+# Phase 6 — Testing Layer
 
-Status: Planned
+## Sprint 011 — Integration Testing
 
-Modules: Price Engine, Candle Engine, Market Snapshot, Tick Processing, Multi-Timeframe Cache, History Loader
+**Status:** ✅ Completed
+
+### Objectives
+
+1. ✅ Review existing testing framework
+2. ✅ Verify Engine initialization
+3. ✅ Verify `CMarketSnapshot` readiness
+4. ✅ Verify Risk calculations
+5. ✅ Verify framework lifecycle
+6. ✅ Confirm compile stability
+
+### Test Coverage
+
+```
+Tests/
+└── Integration/
+    ├── TestEngineInit.mq5
+    ├── TestSnapshotReady.mq5
+    └── TestRiskCalculation.mq5
+```
+
+### Results
+
+* Engine initialization verified
+* Module lifecycle verified
+* Snapshot readiness verified
+* Risk calculations verified
+* Compile verification completed
+* No architecture changes required
+
+### Outcome
+
+The complete Engine pipeline — from initialization through shutdown — has been verified using the framework testing infrastructure.
 
 ---
 
-# Phase 4 — Indicator Framework
+# Phase 7 — Market Data Layer
 
-Status: Planned
+## Sprint 012 — MarketData Layer
 
-Modules: Moving Average, ATR, ADX, RSI, MACD, Bollinger Bands, Volume Analysis, Trend Detection, Custom Indicators
+**Status:** ✅ Completed
+**ADR:** ADR-016
+
+### Objectives
+
+1. ✅ Task 1 — `CMarketSnapshot.DataReady` field added — compile verified
+2. ✅ Task 2 — `CMarketDataProvider` built — owns all handles (`iMA` x2, `iATR`, `iADX`) — 0 errors, 0 warnings, 36 ms
+3. ✅ Task 3 — Indicators refactored — handles removed, read from snapshot — all 4 compile clean
+4. ✅ Task 4 — `Engine.mqh` updated — `SetMarketData()` + Step 0 pipeline
+5. ✅ Task 5 — Full stack: 0 errors, 0 warnings; backtest $1,000 → $1,157.69, Snapshot.IsReady YES, trades confirmed
+6. ✅ Task 6 — Documentation updated
+
+### Outcome
+
+`CMarketDataProvider` introduced as Step 0 in the engine pipeline. All MT5 handle ownership and `CopyBuffer` calls centralized in the MarketData layer. Indicators now read exclusively from `CMarketSnapshot`.
 
 ---
 
-# Phase 5 — Risk Engine
+# Phase 8 — Production Hardening
 
-Status: Starting (Sprint 007)
+## Sprint 013 — Testing Expansion (MarketData + Full Pipeline)
+
+**Status:** ✅ Completed
+**Version:** 2.0.0-alpha.13
+**Date:** July 2026
+
+### Objectives
+
+1. ✅ Task 1 — `Tests/Integration/TestMarketDataProvider.mq5`
+   * 7/7 assertions PASS
+   * Verified DataReady → IsReady gating contract
+   * 7,177,828 ticks processed, 0 violations
+
+2. ✅ Task 2 — `Tests/Integration/TestIndicatorPipeline.mq5`
+   * 9/9 assertions PASS
+   * Verified ADR-016 refactor: all three indicators read from snapshot only
+   * IsReady gates correctly on DataReady across 7,177,828 ticks
+
+3. ✅ Task 3 — `Tests/Integration/TestSignalEvaluation.mq5`
+   * 7/7 assertions PASS
+   * Verified `CBreakoutSignal` deterministic BUY/SELL evaluation
+   * Verified IsReady gating — zero violations across 7,177,828 ticks
+
+4. ✅ Task 4 — `Tests/Integration/TestFullPipeline.mq5`
+   * 8/8 assertions PASS
+   * Integration capstone: full composition root wired
+   * Pipeline ordering contract (ADR-015 + ADR-016) verified end to end
+   * 7,177,828 ticks processed, 0 gating violations
+
+### Results
+
+* Total assertions: 31/31 PASS — 0 failures
+* Baseline balance: $1,157.69 held across all four tests — no regression
+* Testing Layer coverage: ~85%
+
+### Sprint Outcome
+
+Sprint 013 closed the test coverage gap introduced by Sprint 012. Every module in the MarketData layer and the full engine pipeline now has verified integration test coverage. The ADR-015 and ADR-016 ordering contracts are provably correct across millions of ticks.
+
+---
+
+# Phase 9b — Advanced Strategy Infrastructure
+
+**Status:** 🔲 Next — Sprint 014
+**Blocked by:** ADR-017 must be written and approved before implementation begins.
+
+## Prerequisite: ADR-017
+
+Before any Phase 9b module is implemented, ADR-017 must be recorded in `DECISIONS.md`.
+
+ADR-017 covers:
+
+* Grid and Basket Management architecture
+* `CBasketManager` ownership and responsibilities
+* `CGridRisk` relationship to `CRiskBase`
+* Floating Profit Engine design
+* `Analysis/` layer introduction and dependency rules
+* `SRDetector` snapshot interaction model (CMarketSnapshot extension vs dedicated CAnalysisSnapshot)
+* BollingerBands handle ownership model (CMarketDataProvider extended)
+
+---
+
+## Sprint 014 — Indicators Expansion + Analysis Layer
+
+**Status:** 🔲 Planned
+
+### Objectives
+
+1. **Task 1 — `BollingerBands.mqh`**
+
+   * Layer: `Include/Indicators/`
+   * Reads from `CMarketSnapshot` — no direct MT5 API calls
+   * `CMarketDataProvider` extended to own the Bollinger Bands handle
+   * `CMarketSnapshot` extended with BB fields: `BBUpper`, `BBMiddle`, `BBLower`
+   * Follows ADR-016 fully
+   * Compile verified, 0 errors, 0 warnings
+
+2. **Task 2 — `SRDetector.mqh`**
+
+   * Layer: `Include/Analysis/` — new layer
+   * Detects dynamic support and resistance levels
+   * Reads from `CMarketSnapshot`
+   * Writes to snapshot extension or dedicated `CAnalysisSnapshot` per ADR-017
+   * Registered in engine as Step 1.5 (after Indicators, before Signals)
+   * Compile verified, 0 errors, 0 warnings
+
+3. **Task 3 — Engine Integration**
+
+   * `CEngine` extended with `SetAnalysis()` setter
+   * Step 1.5 added to fixed pipeline between `UpdateIndicators()` and `EvaluateSignal()`
+   * Pipeline ordering contract updated per ADR-015 extension
+
+4. **Task 4 — Integration Tests**
+
+   * `TestBollingerBands.mq5`
+   * `TestSRDetector.mq5`
+   * All assertions PASS
+   * No regression on baseline $1,157.69
+
+### Definition of Done
+
+* BollingerBands compiles, integrates, test passes
+* SRDetector compiles, integrates, test passes
+* Engine pipeline extended and verified
+* ADR-017 recorded and synchronized
+* Documentation updated
+
+---
+
+## Sprint 015 — Grid and Basket Management
+
+**Status:** 🔲 Planned — depends on Sprint 014
+
+### Objectives
+
+1. **Task 1 — `CBasketManager.mqh`**
+
+   * Layer: `Include/Trading/`
+   * Owns: active basket lot counts, opposing basket awareness, `CurrentGridCount`, basket open/close lifecycle
+   * Exposes: `CurrentGridCount()`, `ActiveBasketLots()`, `BasketID()`, `FloatingPnL()`
+   * Executes: CPO (Close Profitable Order) protocol when floating profit target is breached
+   * Express Close (EC) logic for basket-level position unwind
+   * Derives from `CModule`
+   * Injected into `CEngine` via `SetBasketManager()`
+
+2. **Task 2 — `CGridRisk.mqh`**
+
+   * Layer: `Include/Risk/`
+   * Extends `CRiskBase`
+   * Owns: `AddLot` calculation mechanics relative to opposing basket sizing
+   * Owns: grid step spacing logic
+   * Returns grid-aware position sizing to `CEngine`
+
+3. **Task 3 — Floating Profit Engine**
+
+   * Implemented inside `CBasketManager`
+   * Calculates combined basket PnL across all open positions in the basket
+   * Triggers CPO when floating profit threshold is breached
+   * Tracks both BUY basket and SELL basket simultaneously
+   * Color-coded threshold lines integration point reserved for future UI layer
+
+4. **Task 4 — Engine Integration**
+
+   * `CEngine` extended with `SetBasketManager()` and `SetGridRisk()` setters
+   * Basket update step added to engine pipeline as Step 5 (after Execution)
+   * Pipeline: MarketData → Indicators → Analysis → Signal → Risk → Execution → Basket Update
+
+5. **Task 5 — Integration Tests**
+
+   * `TestBasketManager.mq5`
+   * `TestGridRisk.mq5`
+   * `TestFloatingProfitEngine.mq5`
+   * All assertions PASS
+   * No regression on baseline
+
+### Definition of Done
+
+* `CBasketManager` compiles, integrates, test passes
+* `CGridRisk` compiles, integrates, test passes
+* Floating Profit Engine verified
+* Engine pipeline extended and verified
+* Documentation updated
+
+---
+
+## Phase 9b Exit Criteria
+
+Phase 10 may not begin until all of the following are satisfied:
+
+* ✅ ADR-017 recorded
+* ✅ `BollingerBands.mqh` complete and tested
+* ✅ `SRDetector.mqh` complete and tested
+* ✅ `CBasketManager.mqh` complete and tested
+* ✅ `CGridRisk.mqh` complete and tested
+* ✅ Floating Profit Engine complete and tested
+* ✅ Engine pipeline updated and all integration tests passing
+* ✅ Documentation synchronized
+
+---
+
+# Phase 10 — AI Data Collection
+
+**Status:** 📋 Planned — blocked on Phase 9b completion
+
+## Sprint 016 — AITradeLogger and AITradeRecord
+
+### Prerequisite
+
+Phase 9b must be fully complete. `CBasketManager` must be operational and exposing `BasketID`, `CurrentGridCount`, `ActiveBasketLots`, and `FloatingPnL` before this sprint begins.
+
+### Objectives
+
+1. **Task 1 — `AITradeRecord` structure**
+
+   Per-order record written at order close:
+
+   | Field | Description |
+   |---|---|
+   | `Timestamp` | Bar open time at order entry |
+   | `Symbol` | Instrument |
+   | `Direction` | BUY or SELL |
+   | `EntryPrice` | Order open price |
+   | `FastEMA` | Snapshot value at entry |
+   | `SlowEMA` | Snapshot value at entry |
+   | `ATR` | Snapshot value at entry |
+   | `ADX` | Snapshot value at entry |
+   | `BBUpper` | Bollinger Band upper at entry |
+   | `BBMiddle` | Bollinger Band middle at entry |
+   | `BBLower` | Bollinger Band lower at entry |
+   | `SRProximity` | Distance from nearest S/R level at entry |
+   | `CurrentGridCount` | Active grid order count at entry |
+   | `ActiveBasketLots` | Total basket lot size at entry |
+   | `BasketID` | Links order to its basket |
+   | `OrderPnL` | This order's closed PnL |
+   | `BasketOutcome` | Total basket PnL — filled at basket closure |
+   | `BasketContribution` | This order's share of basket result |
+
+   Note: `Outcome` (per-order binary WIN/LOSS) is removed. The correct training signal is basket-level.
+
+2. **Task 2 — `AITradeLogger.mqh`**
+
+   * Layer: `Include/AI/`
+   * Writes `AITradeRecord` to CSV on each order close
+   * Reads basket state from `CBasketManager` at close time
+   * Reads snapshot state from `CMarketSnapshot` at entry time (cached)
+   * Registered in engine pipeline after Execution stage
+
+3. **Task 3 — Engine Integration**
+
+   * `CEngine` extended with `SetAILogger()` setter
+   * Logger step added after Execution stage
+
+4. **Task 4 — Integration Tests**
+
+   * `TestAITradeLogger.mq5`
+   * Verify CSV output structure
+   * Verify basket linkage correctness
+   * Verify no regression
+
+---
+
+# Phase 11 — AI Training Pipeline
+
+**Status:** 📋 Planned — blocked on Phase 10 completion
 
 Modules:
 
-```text
-Position Sizing       ← salvage from old MathUtils.mqh
-Risk Calculator       ← salvage from old MathUtils.mqh
-Exposure Control
-Daily Loss Limit
-Drawdown Protection
-Correlation Filter
-Trade Validation
-```
+* Feature normalization
+* Label generation from `BasketContribution`
+* Model training pipeline (offline Python or MQL5 ONNX)
+* Model export to ONNX format
+* ONNX model import into MQL5 framework
+
+Training target: given indicator features at entry, predict whether this order will contribute positively to its basket outcome.
 
 ---
 
-# Phase 6 — Trading Engine
+# Phase 12 — AI Execution Layer
 
-Status: Planned
+**Status:** 📋 Planned — blocked on Phase 11 completion
 
-Modules: Trade Manager, Order Manager, Position Manager, Execution Engine, Trade Filters, Order Lifecycle
+## Stage 1 — Binary Veto (initial deployment)
 
----
+* AI model loaded via ONNX
+* At signal evaluation time, model scores the proposed trade
+* Low-confidence trades are vetoed — execution blocked
+* High-confidence trades proceed normally
+* Veto threshold configurable via `CConfig`
 
-# Phase 7 — Strategy Engine
+## Stage 2 — Confidence-Weighted Lot Sizing (evolution)
 
-Status: Planned
+* Binary veto replaced by confidence multiplier
+* High confidence → increase `AddLot` multiplier → larger position
+* Low confidence → reduce `AddLot` multiplier → smaller position or skip
+* Integrates with `CGridRisk` via multiplier parameter
+* Applies independently to BUY basket and SELL basket
 
-Modules: Swing Breakout, Trend Following, Scalping, Reversal, Range Trading, Strategy Interface
-
----
-
-# Phase 8 — AI Engine
-
-Status: Planned
-
-Modules: Feature Extraction, Market Classification, Signal Scoring, Trade Confidence, Risk Prediction, Adaptive Parameters
-
-Note: `CPlatform::Config()` returns `const CConfig*` intentionally. When Phase 8 begins, runtime parameter adaptation should be implemented as narrow, explicit setters — not by widening this to non-const. See DECISIONS.md, ADR-012.
+Prerequisite for Stage 2: Stage 1 must prove model accuracy over a statistically significant forward-test period before confidence weighting is enabled.
 
 ---
 
-# Phase 9 — Testing
+# Phase 13 — Optimization
 
-Status: Partially started
+**Status:** 📋 Planned — blocked on Phase 12 completion
 
 Modules:
 
-```text
-Unit Tests      — TestFramework.mqh + TestStringUtils.mq5 exist
-Integration     — pending (first real integration test is AI_SwingBreakout_Pro.mq5, Sprint 007)
-Stress Tests    — planned
-Regression      — planned
-```
+* Parameter Optimization
+* Walk-Forward Analysis
+* Monte Carlo Simulation
+* Portfolio Optimization
+* Performance Analytics
+* Robustness Validation
+
+These tasks begin only after the complete AI-augmented trading framework reaches functional stability.
 
 ---
 
-# Phase 10 — Optimization
+# Phase 14 — Production Release
 
-Status: Planned
+**Target Version:** `2.0.0`
 
-Modules: Parameter Optimization, Walk Forward Testing, Performance Analysis, Monte Carlo Simulation
+## Release Requirements
 
----
+Before production release, the project must satisfy all of the following:
 
-# Phase 11 — Production Release
-
-Target Version: `2.0.0`
-
-Release Criteria:
-
-* All planned modules completed
+* All planned framework modules completed
+* Full documentation synchronized
 * Stable architecture
-* Full documentation
-* Zero known critical compile issues
-* Successful long-term backtesting
+* Zero known critical defects
+* Zero compilation errors
+* Zero compilation warnings
+* Complete integration test suite
+* Successful long-term forward testing
+* Successful walk-forward validation
+* Successful Monte Carlo validation
 * Production-ready codebase
 
 ---
 
-# Current Priority
+# Current Project Status
 
-Current Sprint: **Sprint 010**
+**Current Version:** `2.0.0-alpha.13`
 
-Current Task:
+**Current Sprint:** Sprint 014
 
-* ⏳ Task 1 — Trade history logging via `CLogger`
+**Current Phase:** Phase 9b — Advanced Strategy Infrastructure
 
-Known MQL5 gotchas to check in every new file going forward:
+**Current Priority:** Write ADR-017, then begin Sprint 014 (BollingerBands + SRDetector)
 
-* No static class members as default parameter values → use overload pairs
-* Virtual method signature must match exactly → different parameter list hides instead of overrides, compiles clean, fails silently
+**Immediate Blocker:** ADR-017 must be approved before any Phase 9b code is written.
+
+Documentation must continue to remain synchronized with implementation after every completed sprint.
+
+---
+
+# Updated Engine Pipeline (Post Phase 9b)
+
+```text
+0. Update MarketData          (CMarketDataProvider)
+         │
+         ▼
+1. Update Indicators          (EMA, ATR, ADX, BollingerBands)
+         │
+         ▼
+1.5 Update Analysis           (SRDetector)          [Phase 9b]
+         │
+         ▼
+2. Evaluate Signal            (CBreakoutSignal)
+         │
+         ▼
+3. Evaluate Risk              (CRiskManager + CGridRisk)
+         │
+         ▼
+4. Execute Trade              (CTradeExecutor)
+         │
+         ▼
+5. Update Basket              (CBasketManager)       [Phase 9b]
+         │
+         ▼
+6. Log AI Record              (CAITradeLogger)       [Phase 10]
+```
+
+---
+
+# Long-Term Development Roadmap
+
+Following completion of the current framework, future development will expand into:
+
+* Artificial Intelligence
+* Machine Learning integration
+* Portfolio optimization
+* Institutional-grade execution
+* Advanced risk analytics
+* Cross-market trading support
+* Distributed optimization
+* Cloud-assisted testing
+
+These initiatives build upon the stable modular architecture established during the Alpha development cycle.
 
 ---
 
 # Definition of Done
 
-A sprint is complete only when:
+A sprint is considered complete only when:
 
-* Source code is production quality
+* Production-quality source code is implemented
 * Project compiles successfully
-* Documentation is synchronized
+* Zero compilation errors
+* Zero compilation warnings
+* Documentation is fully synchronized
 * Architecture remains consistent
-* Changes are committed to GitHub
-* Repository is in a stable state
+* Integration verified
+* Tests completed where applicable
+* Repository committed to GitHub
+* Repository remains in a stable state
+
+---
+
+# Guiding Principle
+
+The objective of AI Swing Breakout Pro is not simply to create another Expert Advisor.
+
+The objective is to build a professional, modular, maintainable trading framework capable of evolving over many years without sacrificing architectural quality, code reliability, or documentation accuracy.
+
+Every sprint should improve both the implementation and the long-term maintainability of the framework.
+
+The architecture is treated as a long-term asset, and every engineering decision should preserve its clarity, modularity, and production readiness.

@@ -1,3 +1,8 @@
+Here is the updated `DECISIONS.md` file with **ADR-016** inserted directly after ADR-015 and before the *Future Decisions* section. I have reformatted your input to match the existing ADR structure (Title, Status, Date, Context, Decision, Consequences) and expanded the *Context* section to logically bridge the rationale with the project's architectural history.
+
+---
+
+
 # AI Swing Breakout Pro Framework
 
 # DECISIONS
@@ -128,6 +133,10 @@ Core Layer Must Remain Independent
 
 Accepted
 
+**Date**
+
+July 2026
+
 ### Context
 
 Core provides the foundation for every other module.
@@ -166,6 +175,10 @@ Complete Source Files Instead of Incremental Assembly
 **Status**
 
 Accepted
+
+**Date**
+
+July 2026
 
 ### Context
 
@@ -208,6 +221,10 @@ Documentation First Development
 
 Accepted
 
+**Date**
+
+July 2026
+
 ### Context
 
 Architecture evolved faster than documentation.
@@ -216,17 +233,13 @@ This created inconsistent project knowledge.
 
 ### Decision
 
-Whenever architecture changes:
-
-Update:
+Whenever architecture changes, update the following documentation before continuing development:
 
 * PROJECT_CONTEXT.md
 * ARCHITECTURE.md
 * CODING_STANDARD.md
 * ROADMAP.md
 * CHANGELOG.md
-
-before continuing development.
 
 ### Consequences
 
@@ -245,6 +258,10 @@ Production Quality Only
 **Status**
 
 Accepted
+
+**Date**
+
+July 2026
 
 ### Context
 
@@ -277,6 +294,10 @@ Layered Architecture
 **Status**
 
 Accepted
+
+**Date**
+
+July 2026
 
 ### Context
 
@@ -312,200 +333,6 @@ Modules become independently testable.
 
 Future expansion becomes easier.
 
----
-
-# ADR-008
-
-## Title
-
-Static Utility Classes
-
-**Status**
-
-Accepted
-
-### Context
-
-Utility classes maintain no state.
-
-Creating instances provides no benefit.
-
-### Decision
-
-Utility classes should expose only static methods.
-
-Example:
-
-```cpp
-class CMathUtils
-{
-public:
-   static double Clamp(...);
-};
-```
-
-### Consequences
-
-No unnecessary object creation.
-
-Cleaner API.
-
-Simpler usage.
-
----
-
-# ADR-009
-
-## Title
-
-Framework Development Workflow
-
-**Status**
-
-Accepted
-
-### Decision
-
-Every module follows:
-
-1. Architecture review
-2. Complete implementation
-3. Compile verification
-4. Integration verification
-5. Documentation update
-6. Git commit
-
-Development proceeds to the next module only after the current module reaches Definition of Done.
-
-### Consequences
-
-Repository remains stable.
-
-Each commit represents a usable state.
-
----
-
-# ADR-010
-
-## Title
-
-LDN Workflow Command
-
-**Status**
-
-Accepted
-
-### Context
-
-Repeated explanations reduced development efficiency.
-
-### Decision
-
-The keyword:
-
-```
-LDN
-```
-
-means:
-
-```
-Let Do Next
-```
-
-The AI should immediately continue with the next planned task without repeating previous explanations unless clarification is required.
-
-### Consequences
-
-Development becomes faster.
-
-Conversation remains focused on implementation.
-
----
-
-# ADR-011
-
-## Title
-
-Documentation Reconciliation & Legacy Module Policy
-
-**Status**
-
-Accepted
-
-**Date**
-
-July 2026
-
-### Context
-
-An export of the actual `AI_SwingBreakout_Pro` project directory was reviewed and found to contain substantially more implemented code than `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `ROADMAP.md`, and `CHANGELOG.md` tracked at the time — including a full Error-handling subsystem, a full Logging subsystem, `Config.mqh`, `InputParameters.mqh`, `Version.mqh`, `BaseObject.mqh`, string/time utilities, and a working test framework with one test suite.
-
-These modules were authored outside the documented Sprint workflow (file headers credit different authorship than the current process) and use conventions that diverge from `CODING_STANDARD.md` in several concrete ways: non-standard include guards, non-standard enum naming, at least one absolute include path, and inconsistent version strings.
-
-Separately, the previously-tracked `Include/Core/MathUtils.mqh` was found to have a structural scope bug — its class body closed early, leaving roughly 480 lines of intended methods floating outside the class — confirming the rebuild that ADR-004 and prior Sprint 004 planning anticipated.
-
-### Decision
-
-1. Documentation is reconciled to match the actual repository state whenever the two are found to disagree. The repository is ground truth; documentation is corrected to it, not the reverse.
-2. Newly-discovered legacy modules are recorded in documentation as **"present, pending standards review"** — a distinct status from "Completed." They are not deleted, rewritten wholesale, or silently accepted as compliant.
-3. A full line-by-line correctness/compliance audit of these legacy modules is explicitly deferred to a dedicated future sprint (Sprint 006), rather than performed reactively during reconciliation. Reconciliation's job is to make documentation honest about what exists; it is not a substitute for review.
-4. Known, concretely-observed deviations (include guard style, enum naming, the absolute include in `Error/TestErrorHandler.mqh`) are logged now, even though a full audit has not been performed, so they aren't lost before Sprint 006 begins.
-5. Formulas discovered in the broken legacy `MathUtils.mqh` that are logically sound but architecturally misplaced (e.g. `PositionSize`, `RiskOfRuin`, `ProfitFactor`) are earmarked for salvage into the future Risk module rather than being discarded or re-derived from scratch later.
-
-### Consequences
-
-Documentation temporarily reports lower confidence ("pending review") for a larger share of the codebase than before, even though more code exists. This is intentional — it is more accurate than the previous state, where undocumented code carried an implicit, unverified assumption of correctness.
-
-Progress percentages increase to reflect real repository contents, but are annotated to make clear that the increase reflects discovery, not new work performed in this cycle.
-
-Sprint 006 (Legacy Standards Reconciliation) is added to the roadmap as a prerequisite to treating these modules as equivalent in trust to the modules built under the documented workflow.
-
----
-
-# ADR-012
-
-## Title
-
-Root EA Include Convention & Core Subsystem Isolation (Error / Logging)
-
-**Status**
-
-Accepted — partially implemented (see Consequences)
-
-**Date**
-
-July 2026
-
-### Context
-
-Two related items surfaced this cycle:
-
-**(a) Main EA file location.** `AI_SwingBreakout_Pro.mq5` lives at the project root (`AI_SwingBreakout_Pro/AI_SwingBreakout_Pro.mq5`), a sibling of `Include/`, `Documentation/`, `Source/`, `Tests/`, `Resources/` — not inside `Include/`. This was not previously documented anywhere.
-
-**(b) A proposed "Core Architecture Lock."** A set of stricter dependency rules was proposed for Core: a one-way flow (`Base → Types/Constants/Version → Logging/Error (parallel) → feature modules`), a forbidden-dependency table, and a rule that `Core/Error` and `Core/Logging` must never include each other. The original proposal also stated includes should never use `../` backtracking, giving `#include "Logging/LogLevel.mqh"` as a correct example.
-
-That specific example is incorrect for this project's actual folder layout and must not be adopted as written. MQL5 resolves relative `#include` paths against the *including file's own directory*, not against `Include/` as a project root. A file in `Core/Error/` reaching into the sibling folder `Core/Logging/` requires `../Logging/LogLevel.mqh` — `"Logging/LogLevel.mqh"` from that location would resolve to the nonexistent `Core/Error/Logging/...` and fail to compile. Banning `../` outright would break every legitimate sibling-folder include already in use across `Structures/`, `Utilities/`, `Base/`, and `Logging/Interfaces/`.
-
-Separately, `Core/Error/ErrorInfo.mqh` currently includes `../Logging/LogLevel.mqh` and uses `ENUM_LOG_LEVEL` for its `Severity` field. This is a real, present-day dependency of Error on Logging — the forbidden-dependency table's "Error must not depend on Logging" rule is not yet true of the actual codebase.
-
-### Decision
-
-1. **Root EA include rule (adopted and in effect):** `AI_SwingBreakout_Pro.mq5`, being the one project file that lives outside `Include/`, must prefix every framework include with `Include/` — e.g. `#include "Include/Core/Types.mqh"`. Every file *inside* `Include/Core/...` continues to use ordinary relative paths (`"Constants.mqh"`, `"../Logging/LogLevel.mqh"`, etc.) exactly as ADR-002 already established. This is a clarification of ADR-002 for the one file it didn't previously cover, not a change to ADR-002 itself.
-2. **One-way dependency flow and forbidden-dependency table (adopted as target design):** `Base → Types/Constants/Version → Logging/Error (parallel, mutually isolated) → feature modules (Trading/AI/Risk/UI)`. This extends ADR-003 (Core independence) with finer-grained rules *within* Core.
-3. **Error/Logging mutual isolation (adopted as target design, NOT yet implemented):** `Core/Error` must not depend on `Core/Logging` and vice versa. Since `ErrorInfo.mqh` currently violates this, the rule is accepted as a goal, tracked as a concrete Sprint 006 task (give `SErrorInfo.Severity` its own type instead of borrowing `ENUM_LOG_LEVEL`), and is not to be described as already true in any other document until that refactor lands.
-4. **The "no `../`" include rule from the original proposal is rejected as written**, since it does not match how MQL5 resolves relative includes and would break existing, correct code. The project's include rule remains what ADR-002 and `CODING_STANDARD.md` already specify: relative to the including file, with `../` used freely for sibling/parent traversal. The only addition is item 1, above.
-5. **No cross-module enum sharing (adopted as target design for new code):** new subsystems should own their own enums rather than reaching into a sibling subsystem's types. This is a preference for new work, not a mandate to immediately refactor already-shared types outside of the specific Error/Logging case in item 3.
-
-### Consequences
-
-- `AI_SwingBreakout_Pro.mq5` can be written correctly today using the rule in item 1 — no code currently depends on this being fixed later.
-- Items 2–3 are **design intent, not current fact**. `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, and `ROADMAP.md` reflect this distinction explicitly (see their "planned" / "not yet implemented" language) so a future session doesn't assume the isolation already exists.
-- Sprint 006 (Legacy Standards Reconciliation) gains a concrete, scoped task: decouple `ErrorInfo.mqh` from `LogLevel.mqh`.
-- No file's actual include statements change as a result of this ADR alone, except future new code being written to the target design from now on.
-
----
-
 # ADR-013
 
 ## Title
@@ -529,16 +356,20 @@ Initial review found a serious defect: `CModule::Initialize()` took no parameter
 ### Decision
 
 1. `CContext` injection is standardized at the `CModule` base, not left to each derived module to reimplement. Every future Trading/Risk/AI module inherits `Initialize(CContext*)`, `Shutdown()`, and `Context()` from `CModule` rather than redeclaring them, which is what caused the original defect.
+
 2. `CModule::Initialize(CContext*)` validates via `CContext::IsValid()` (checking Platform/Logger/ErrorHandler are all non-null), not just a bare null check on `context` itself.
-3. `CContext`'s `Platform()`/`Logger()`/`ErrorHandler()` getters are `const`, so `CModule::Context()` can return `const CContext*` — derived modules can use every service reachable through the context, but cannot rewire the context itself (no calling `SetPlatform`/`SetLogger`/`SetErrorHandler` through a const pointer).
+
+3. `CContext`'s `Platform()` / `Logger()` / `ErrorHandler()` getters are `const`, so `CModule::Context()` can return `const CContext*` — derived modules can use every service reachable through the context, but cannot rewire the context itself (no calling `SetPlatform` / `SetLogger` / `SetErrorHandler` through a const pointer).
+
 4. `CModuleManager` does not own registered modules — it does not delete them in `Shutdown()` or a destructor. The caller that creates a module remains responsible for its lifetime. This mirrors `CContext`'s existing non-owning design rather than introducing a second, inconsistent ownership model within the same layer.
+
 5. Going forward, any class hierarchy in this project with a virtual method meant to be overridden must be reviewed for exact signature match before being considered done — a mismatched override is not caught by compilation and will not produce a warning.
 
 ### Consequences
 
-- Future Trading/Risk/AI modules get context access "for free" by inheriting from `CModule`, rather than each needing to duplicate `m_context` storage and validation the way `CEngine` originally did.
-- `CModuleManager` growing a destructor that deletes modules later, if that's ever wanted, is a deliberate design change requiring a new ADR — not an oversight to silently fix.
-- `ARCHITECTURE.md` and `ROADMAP.md` require updates to reflect this layer's existence (folder structure, dependency diagram, sprint history) — tracked as part of this same documentation pass rather than deferred, unlike some earlier legacy-module findings, because this layer was built this cycle rather than discovered as pre-existing.
+* Future Trading/Risk/AI modules get context access "for free" by inheriting from `CModule`, rather than each needing to duplicate `m_context` storage and validation the way `CEngine` originally did.
+* `CModuleManager` growing a destructor that deletes modules later, if that's ever wanted, is a deliberate design change requiring a new ADR — not an oversight to silently fix.
+* `ARCHITECTURE.md` and `ROADMAP.md` require updates to reflect this layer's existence (folder structure, dependency diagram, sprint history) — tracked as part of this same documentation pass rather than deferred, unlike some earlier legacy-module findings, because this layer was built this cycle rather than discovered as pre-existing.
 
 ---
 
@@ -565,20 +396,35 @@ The initial design used `struct SMarketSnapshot` stored by value inside `CContex
 ### Decision
 
 1. `SMarketSnapshot` is replaced by `class CMarketSnapshot`. The class is stored by value inside `CContext` as `CMarketSnapshot m_snapshot` — no heap allocation.
+
 2. `CContext::Snapshot()` returns `CMarketSnapshot*` via `GetPointer(m_snapshot)`. This gives Indicator modules a writable pointer to the shared buffer.
-3. `CMarketSnapshot` carries: `FastEMA`, `SlowEMA`, `ATR`, `ADX`, `PlusDI`, `MinusDI`, `TrendDirection`, `Spread`, `Volume`, and `IsReady`. All fields are public — the class is a data-carrying buffer, not an encapsulated object.
+
+3. `CMarketSnapshot` carries:
+
+   * `FastEMA`
+   * `SlowEMA`
+   * `ATR`
+   * `ADX`
+   * `PlusDI`
+   * `MinusDI`
+   * `TrendDirection`
+   * `Spread`
+   * `Volume`
+   * `IsReady`
+
+   All fields are public — the class is a data-carrying buffer, not an encapsulated object.
+
 4. `IsReady` is the contract between layers. Indicator modules set it `true` only after all fields are populated for the current bar. Signal and Risk modules must check `IsReady` before reading any field. `CContext::IsValid()` does not check `IsReady` — it checks only that the three shared services (Platform/Logger/ErrorHandler) are non-null.
+
 5. The `Snapshot()` getter is non-const on `CContext` — Indicator modules need write access. Signal and Risk modules receive `const CContext*` from `CModule::Context()` and must call `Snapshot()` through that. Since `Snapshot()` is non-const, they cannot call it through a const pointer — this is intentional and enforces the read-only contract at the type level without needing separate getter overloads.
 
 ### Consequences
 
-- `GetPointer()` works correctly. Indicator modules can write through the returned pointer each tick.
-- No heap allocation required. `CMarketSnapshot` has the same lifetime as `CContext`.
-- The naming prefix changes from `S` to `C` to reflect the class type. All references updated.
-- Signal and Risk modules cannot accidentally write to the snapshot through `const CContext*` — the compiler enforces this.
-- Future snapshot fields (RSI, MACD, Bollinger Bands, etc.) are added to `CMarketSnapshot` only — no other files need changing unless they consume those new fields.
-
----
+* `GetPointer()` works correctly. Indicator modules can write through the returned pointer each tick.
+* No heap allocation is required. `CMarketSnapshot` has the same lifetime as `CContext`.
+* The naming prefix changes from `S` to `C` to reflect the class type. All references are updated.
+* Signal and Risk modules cannot accidentally write to the snapshot through `const CContext*` — the compiler enforces this.
+* Future snapshot fields (RSI, MACD, Bollinger Bands, etc.) are added to `CMarketSnapshot` only — no other files need changing unless they consume those new fields.
 
 # ADR-015
 
@@ -596,41 +442,181 @@ July 2026
 
 ### Context
 
-`CEngine` is the top-level orchestration module. It holds non-owning pointers to three Indicator modules (`CEMAIndicator`, `CATRIndicator`, `CADXIndicator`), one Signal module (`CBreakoutSignal`), and one Risk module (`CRiskManager`). These are wired by the composition root via `SetIndicators()`, `SetSignal()`, `SetRisk()` before `Initialize()` is called.
+`CEngine` is the top-level orchestration module. It holds non-owning pointers to three Indicator modules (`CEMAIndicator`, `CATRIndicator`, `CADXIndicator`), one Signal module (`CBreakoutSignal`), and one Risk module (`CRiskManager`). These are wired by the composition root via `SetIndicators()`, `SetSignal()`, and `SetRisk()` before `Initialize()` is called.
 
 Several design questions arose during implementation:
 
-**(a) Constructor vs setter for indicator periods.** Indicator subclasses could receive their period parameters via constructor or via post-construction setters.
+**(a) Constructor vs setter for indicator periods.**
 
-**(b) Rollback on `CreateHandle()` failure.** If `CIndicatorBase::Initialize()` calls `CreateHandle()` and it fails, the base class state (`m_initialized`, `m_context`) has already been set by `CModule::Initialize()`. This state needs to be cleaned up before returning `false`.
+Indicator subclasses could receive their period parameters either through their constructor or via post-construction setter methods.
 
-**(c) UpdateIndicators() failure policy.** If one indicator's `Update()` returns `false`, should the pipeline abort or continue?
+**(b) Rollback on `CreateHandle()` failure.**
+
+If `CIndicatorBase::Initialize()` calls `CreateHandle()` and that operation fails, the base class (`CModule`) has already completed its own initialization, meaning `m_initialized` is `true` and `m_context` has been assigned. Leaving the object in this partially initialized state would violate the framework's initialization contract.
+
+**(c) `UpdateIndicators()` failure policy.**
+
+If one indicator fails to update because it does not yet have enough historical bars, should the entire engine stop processing for that tick, or should the remaining indicators continue updating while downstream modules determine whether the snapshot is usable?
 
 ### Decision
 
-1. **Constructor parameters for indicator periods (adopted).** Each indicator subclass receives its period(s) and timeframe via constructor: `CEMAIndicator(fastPeriod, slowPeriod, timeframe)`, `CATRIndicator(period, timeframe)`, `CADXIndicator(period, timeframe)`. Periods are fixed at construction and cannot be changed after the fact. Post-construction setters are not provided. This is consistent with the existing `CModule(name)` pattern and avoids the risk of calling `Initialize()` on an indicator whose configuration is incomplete.
+#### 1. Constructor Parameters for Indicator Configuration
 
-2. **Rollback on `CreateHandle()` failure (adopted).** If `CreateHandle()` returns `false` inside `CIndicatorBase::Initialize()`, the method calls `CModule::Shutdown()` before returning `false`. This reverts `m_initialized` and clears `m_context`, leaving the object in a clean, pre-initialized state. A partial initialization — `m_context` set but `m_handle` invalid — is not a valid state and must not be allowed to persist.
+Indicator configuration is immutable after construction.
 
-3. **`UpdateIndicators()` is best-effort and returns void (adopted).** The initial implementation returned `false` from `CEngine::Update()` if any single indicator's `Update()` call failed. This was changed: `UpdateIndicators()` is `void` and calls all three indicators unconditionally regardless of individual return values. The rationale: a single indicator not yet having enough bars calculated is not an engine error — it is expected behaviour on startup. The Signal module detects this correctly through `CMarketSnapshot::IsReady`, which Indicator modules set only after all fields are populated. Aborting the pipeline on any indicator failure would prevent the Signal module from ever having the opportunity to detect incomplete data through its designed-for channel.
+Each indicator receives its required parameters through its constructor.
 
-4. **Fixed pipeline sequence (adopted).** `CEngine::Update()` always executes in this order:
-   - `UpdateIndicators()` — all three, best-effort
-   - `EvaluateSignal()` — reads snapshot, aborts pipeline if signal evaluation fails
-   - `EvaluateRisk()` — reads signal result, aborts pipeline if risk evaluation fails
-   - Execution — Stage 7 placeholder
+Examples:
 
-   Signal and Risk evaluation are not best-effort — if either returns `false`, `Update()` returns `false`. Only Indicator updates are best-effort, because the snapshot validity flag (`IsReady`) is the correct mechanism to communicate readiness downstream.
+```cpp
+CEMAIndicator(fastPeriod, slowPeriod, timeframe)
+CATRIndicator(period, timeframe)
+CADXIndicator(period, timeframe)
+```
+
+Setter methods for periods are intentionally not provided.
+
+This guarantees that an indicator cannot enter `Initialize()` with incomplete or inconsistent configuration and follows the same construction pattern already established by `CModule(name)`.
+
+---
+
+#### 2. Rollback on Initialization Failure
+
+If `CreateHandle()` fails inside `CIndicatorBase::Initialize()`:
+
+```cpp
+CModule::Shutdown();
+return false;
+```
+
+must be executed before returning.
+
+This guarantees the object returns to the exact same state it had before initialization began.
+
+A partially initialized indicator—with a valid context but an invalid indicator handle—is not considered a valid object state.
+
+---
+
+#### 3. Best-Effort Indicator Updates
+
+`UpdateIndicators()` is a **best-effort** stage.
+
+It returns:
+
+```cpp
+void
+```
+
+rather than:
+
+```cpp
+bool
+```
+
+Every registered indicator is updated each engine cycle regardless of whether another indicator reports failure.
+
+This behavior is intentional.
+
+During startup an indicator commonly lacks sufficient historical bars.
+
+That situation is expected and should **not** be treated as an engine failure.
+
+Instead:
+
+* Indicators populate `CMarketSnapshot`.
+* Indicators set `IsReady = true` only after every required value has been successfully calculated.
+* Signal and Risk modules use `IsReady` to determine whether processing should continue.
+
+Readiness is therefore communicated through the shared snapshot rather than through the engine pipeline itself.
+
+---
+
+#### 4. Fixed Engine Pipeline
+
+`CEngine::Update()` always executes in the following order:
+
+```
+1. UpdateIndicators()
+2. EvaluateSignal()
+3. EvaluateRisk()
+4. Execution (Stage 7 placeholder)
+```
+
+Pipeline behavior:
+
+* Indicator stage is best-effort.
+* Signal stage is mandatory.
+* Risk stage is mandatory.
+
+If:
+
+```cpp
+EvaluateSignal() == false
+```
+
+the engine stops processing.
+
+Likewise:
+
+```cpp
+EvaluateRisk() == false
+```
+
+terminates the update cycle.
+
+Only indicator updates tolerate temporary failures because snapshot readiness is already represented by `CMarketSnapshot::IsReady`.
 
 ### Consequences
 
-- Indicator configuration errors are caught at object construction, not at `Initialize()` time.
-- Partial initialization is impossible — `Shutdown()` rollback ensures either full success or full rollback.
-- The pipeline does not abort on startup when indicators are still warming up. This eliminates false-negative engine failures during the first N bars of a session.
-- Adding a fourth indicator in future requires: adding a member pointer to `CEngine`, updating `SetIndicators()`, and calling it in `UpdateIndicators()`. No other files change.
-- Execution (Stage 7) will be inserted at step 4 of the pipeline when implemented. The slot is already present as a comment placeholder.
+* Indicator configuration is fixed at construction time, preventing incomplete initialization.
+* Initialization is transactional—objects either initialize successfully or roll back completely.
+* Engine startup no longer reports false failures while indicators accumulate enough historical data.
+* The orchestration pipeline has a single deterministic execution order that every future module must follow.
+* Adding another indicator requires only:
 
----
+  * adding a member pointer to `CEngine`,
+  * extending `SetIndicators()`,
+  * invoking the new indicator inside `UpdateIndicators()`.
+* Stage 7 (trade execution) already has a reserved position in the pipeline and can be implemented later without changing the surrounding architecture.
+
+# ADR-016
+
+## Title
+
+MarketData Layer Boundary
+
+**Status**
+
+Implemented (Sprint 012)
+
+**Date**
+
+July 11, 2026
+
+### Context
+
+The Indicators layer originally made direct MT5 API calls for indicator handle creation (`iMA`, `iATR`, `iADX`) and data copying (`CopyBuffer()`). This mixed I/O responsibilities with business logic, making unit testing difficult and tying the framework directly to the MT5 platform. As the framework evolves, a clear separation between data acquisition and data processing is required to support future data sources (e.g., historical data replays, simulated data, or alternative broker APIs).
+
+### Decision
+
+A dedicated MarketData layer is introduced between Framework and Indicators.
+
+`CMarketDataProvider` exclusively owns:
+* All MT5 handle creation (`iMA`, `iATR`, `iADX`)
+* All `CopyBuffer()` calls for raw data retrieval
+
+Indicators are strictly forbidden from calling MT5 APIs directly.
+
+A two-stage readiness model is implemented:
+* `DataReady` (set by `CMarketDataProvider`) — raw market data has been successfully populated into `CMarketSnapshot` for this tick.
+* `IsReady` (set by `CEngine`) — all indicator business logic has completed processing the raw data.
+
+### Consequences
+
+* Indicator constructors no longer take period or timeframe arguments, as they no longer create their own handles.
+* `CEngine` gains a `SetMarketData()` setter and a new Step 0 in its `Update()` pipeline to drive the MarketData provider.
+* `CMarketSnapshot` gains a `DataReady` field, complementing the existing `IsReady` field to clearly delineate raw data availability from processed indicator readiness.
+* Testing indicators is simplified — they now only require a populated `CMarketSnapshot` instance, completely decoupling them from the MT5 runtime.
 
 # Future Decisions
 
@@ -644,12 +630,151 @@ If a decision changes:
 
 This preserves the architectural history of the project.
 
+# ADR-017: Grid and Basket Management Architecture
+
+**Date:** 2026-07-12  
+**Status:** Accepted  
+**Implementation Sprint:** Sprint 014 (Phase 9b)
+
 ---
 
-# Guiding Principle
+## Context
 
-A good architecture is not defined only by the code that exists.
+The current `Trading` layer consists of `CTradeExecutor` and `CPositionTracker`, which handle single‑order execution and basic position existence checks. There is no concept of grids, baskets, or opposing‑side position awareness. Phase 10 of the project requires the AI data collection system to capture runtime basket state—including current grid count, basket lot sizes, and outcome contribution—to enable meaningful per‑basket performance logging and future AI training.
 
-It is also defined by the reasoning behind every important decision.
+Without explicit grid and basket management:
+- The system cannot safely scale to multiple simultaneous orders (baskets) with opposing sides.
+- Floating profit/loss cannot be aggregated at a basket level.
+- The `AITradeLogger` will lack the necessary fields (`CurrentGridCount`, `ActiveBasketLots`, `BasketID`, etc.) to produce high‑quality training labels.
+- There is no clean way to implement a CPO (Close Profitable Order) protocol based on combined basket PnL.
 
-This document preserves that reasoning so the project can evolve consistently over time.
+The grid/basket infrastructure must exist before Phase 10 AI logging begins, and it must be designed with clear separation of concerns to avoid polluting existing core modules.
+
+---
+
+## Decision
+
+We will introduce **Phase 9b (Advanced Strategy Infrastructure)** to formally implement grid mechanics, advanced risk calculation, and market analysis into the object‑oriented framework.
+
+The following new modules and layers will be added:
+
+### 1. Basket Management — `CBasketManager.mqh`
+
+**Layer:** `Include/Trading/`
+
+**Responsibility:**
+- Owns active basket lot counts (total long and short lots in the current basket).
+- Opposing‑basket awareness (detects if both sides are present).
+- `CurrentGridCount` (number of grid levels active).
+- Basket open/close lifecycle (start, update, close).
+
+**Scope Restrictions:** This module will maintain a strictly modernized architecture. Deprecated legacy logic—specifically **Survival Net**, **Time Restrictions**, and **PartialClose** parameters—are **explicitly excluded** from this module and the wider framework.
+
+**Behavior:**
+- Maintains a single active basket per symbol; when a basket is closed, it resets state.
+- Contains the **Floating Profit Engine** logic:
+  - Calculates combined basket PnL (floating profit/loss) in real time.
+  - Tracks `FLProfitTarget` and `FLProfitTrailing` variables to manage basket closures.
+  - Triggers CPO (Close Profitable Order) protocol when floating profit reaches a predefined target (configurable).
+  - CPO execution calls `CTradeExecutor` to close all orders in the basket atomically, scanning and closing only profitable buy/sell orders when bid/ask prices breach specific, designated color‑coded threshold lines.
+
+### 2. Grid Risk Calculation — `CGridRisk.mqh`
+
+**Layer:** `Include/Risk/` (extends `CRiskBase`)
+
+**Responsibility:**
+- Replaces static lot sizing with a dynamic, four‑step conditional logic formula.
+- Determines position sizes based on current grid counts, `AddLot` variables, and precise lot ratios relative to the opposing active basket.
+- Outputs `SRiskResult` with the computed lot size and stop‑loss/take‑profit distances, just like `RiskManager`, but using grid‑specific logic.
+
+**Note:** The composition root will decide whether to use `CRiskManager` (single‑order mode) or `CGridRisk` (grid mode) based on configuration.
+
+### 3. Advanced Indicators — `BollingerBands.mqh`
+
+**Layer:** `Include/Indicators/`
+
+**Responsibility:**
+- Calculates middle, upper, and lower Bollinger Bands.
+- Strictly adheres to **ADR‑016**: `CMarketDataProvider` retains exclusive ownership of the indicator handle; the module issues no direct MT5 API calls and reads purely from `CMarketSnapshot`.
+
+### 4. Analysis Layer & S/R Detection — `SRDetector.mqh`
+
+**Layer:** `Include/Analysis/` (a newly established layer sitting precisely between `Indicators/` and `Signals/`)
+
+**Responsibility:**
+- Detects dynamic support and resistance (S/R) levels using recent price action and/or Bollinger Bands.
+
+**State Management Decision (Option B selected):**
+Two options were considered:
+- **Option A:** Extend `CMarketSnapshot` with S/R fields (e.g., `SupportLevel`, `ResistanceLevel`). This would keep all market data in one snapshot but may bloat the struct.
+- **Option B:** Create a dedicated snapshot, e.g., `CAnalysisSnapshot`, inside `Context.mqh` alongside `CMarketSnapshot`. This separates concerns and is future‑proof for additional analysis outputs.
+
+**Decision:** We choose **Option B** — a new `CAnalysisSnapshot` class in `Context.mqh`. This keeps the market data snapshot focused on raw/derived price data, while analysis results are stored separately. The engine will update both snapshots in sequence (market data first, then analysis). Signals can read from both via the context.
+
+The `SRDetector` is owned and updated by `CEngine` in the per‑tick pipeline (after indicators, before signal evaluation).
+
+---
+
+## Layer Placement Summary
+
+| Module | Layer | Notes |
+|--------|-------|-------|
+| `CBasketManager` | `Trading` | Co‑exists with `TradeExecutor` and `PositionTracker`. |
+| `CGridRisk` | `Risk` | Extends `CRiskBase`; placed alongside `RiskManager`. |
+| `BollingerBands.mqh` | `Indicators` | New indicator module; follows ADR‑016. |
+| `SRDetector.mqh` | `Analysis` | New layer, positioned between `Indicators` and `Signals`. Directory: `Include/Analysis/`. |
+
+---
+
+## Ownership
+
+- **Composition root** (`AI_SwingBreakout_Pro.mq5`) owns all new modules as global value‑owned instances.
+- **`CEngine`** receives non‑owning pointers via setter injection:
+  - `SetBasketManager(CBasketManager*)`
+  - `SetGridRisk(CGridRisk*)`
+  - `SetBollingerBands(CBollingerBands*)`
+  - `SetSRDetector(CSRDetector*)`
+- `CEngine::Initialize()` will require these new pointers to be non‑null (in addition to existing ones) to ensure the pipeline is fully wired.
+- `CBasketManager` will hold a pointer to `CTradeExecutor` to execute CPO closes; this pointer is injected via setter as well.
+- All new modules are `CModule` derivatives so they automatically receive the `CContext` pointer.
+
+---
+
+## Consequences
+
+### Positive
+- Phase 10 `AITradeLogger` gains all required fields:
+  - `CurrentGridCount`
+  - `ActiveBasketLots` (total lots in the basket)
+  - `BasketID` (a unique identifier for the basket, e.g., timestamp or incrementing counter)
+  - `BasketOutcome` (profit/loss contribution at basket close)
+  - `BasketContribution` (percentage or risk‑adjusted contribution to overall PnL)
+- The system can now operate in grid mode with proper risk scaling and CPO protocol.
+- `AITradeRecord` outcome label changes from per‑order binary (win/loss) to basket‑level PnL contribution, providing richer training signals for future AI models.
+- Clear separation of concerns: basket logic, grid risk, and analysis are each in dedicated modules.
+- The new `Analysis` layer makes it easy to add more technical analysis components (e.g., pivot points, trend lines) without polluting the core Framework or Indicators.
+
+### Negative / Risks
+- Increased complexity in the composition root and engine initialization (seven new setters, more null checks).
+- The CPO protocol may introduce additional latency if many orders must be closed simultaneously; we need to ensure `CTradeExecutor` can batch close orders efficiently.
+- The `CAnalysisSnapshot` adds another shared state object; careful concurrency handling is required (no simultaneous writes; engine updates in a defined sequence).
+- Migration from single‑order mode to grid mode requires configuration flags; we must ensure backward compatibility for non‑grid users.
+
+### Mitigations
+- Keep the engine pipeline strictly sequential: MarketData → Indicators → Analysis → Signal → Risk → Execution → Basket update (after execution).
+- Use the existing `CModule` lifecycle and dependency injection pattern to keep modules testable and loosely coupled.
+- Write integration tests specifically for grid/basket scenarios (Sprint 014) to validate CPO, AddLot calculations, and state consistency.
+
+---
+
+## Related ADRs
+
+- ADR‑013: Framework Layer (CContext / CModule / CModuleManager / CEngine)
+- ADR‑015: Engine Orchestration Pipeline
+- ADR‑016: MarketData Architectural Boundary
+
+---
+
+## Status
+
+**Accepted** — July 12, 2026. Implementation planned for Sprint 014 (Phase 9b).
