@@ -4,7 +4,7 @@
 //| File    : Config.mqh                                             |
 //| Purpose : Global configuration, enums, and validation             |
 //| Author  : ZiXXXiZ                                                |
-//| Version : 2.0.0-alpha.3                                          |
+//| Version : 2.0.0-alpha.13                                         |
 //+------------------------------------------------------------------+
 #ifndef AI_SWINGBREAKOUT_CORE_CONFIG_MQH
 #define AI_SWINGBREAKOUT_CORE_CONFIG_MQH
@@ -69,7 +69,7 @@ struct STradeConfig
    bool UseBreakEven;
    bool UsePartialClose;
    bool UseATRTrailing;
-   int  MaxSlippagePoints;   // ADDED: slippage in points (1 pip = 10 points for 5-digit broker)
+   int  MaxSlippagePoints;
 };
 
 struct SFilterConfig
@@ -83,11 +83,13 @@ struct SFilterConfig
 
 struct SIndicatorConfig
 {
-   int FastEMA;
-   int SlowEMA;
-   int ATRPeriod;
-   int ADXPeriod;
-   int VolumeMAPeriod;
+   int    FastEMA;
+   int    SlowEMA;
+   int    ATRPeriod;
+   int    ADXPeriod;
+   int    VolumeMAPeriod;
+   int    BBPeriod;       // ADDED
+   double BBDeviation;    // ADDED
 };
 
 struct SDashboardConfig
@@ -110,7 +112,6 @@ class CConfig
 {
 public:
 
-   // DIRECT ACCESS (MQL SAFE)
    SRiskConfig       Risk;
    STradeConfig      Trade;
    SFilterConfig     Filter;
@@ -135,7 +136,7 @@ public:
       Trade.UseBreakEven         = true;
       Trade.UsePartialClose      = true;
       Trade.UseATRTrailing       = true;
-      Trade.MaxSlippagePoints    = 10;   // 10 points — 1 pip for 5-digit broker
+      Trade.MaxSlippagePoints    = 10;
 
       Filter.UseADX              = true;
       Filter.UseATR              = true;
@@ -148,6 +149,8 @@ public:
       Indicator.ATRPeriod        = 14;
       Indicator.ADXPeriod        = 14;
       Indicator.VolumeMAPeriod   = 20;
+      Indicator.BBPeriod         = 20;   // ADDED
+      Indicator.BBDeviation      = 2.0;  // ADDED
 
       Dashboard.ShowDashboard    = true;
       Dashboard.ShowStatistics   = true;
@@ -167,8 +170,10 @@ public:
       if(Indicator.ATRPeriod < 1) return false;
       if(Indicator.ADXPeriod < 1) return false;
       if(Indicator.VolumeMAPeriod < 1) return false;
+      if(Indicator.BBPeriod < 2) return false;      // ADDED
+      if(Indicator.BBDeviation <= 0.0) return false; // ADDED
 
-      if(Trade.MaxSlippagePoints < 0) return false;   // ADDED
+      if(Trade.MaxSlippagePoints < 0) return false;
 
       return true;
    }
